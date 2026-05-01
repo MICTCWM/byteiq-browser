@@ -1,0 +1,110 @@
+/* ===== V3 纯净文本 ===== */
+.chat-message.tool-card-style-text {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+}
+
+.tc-text-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.tc-text-dot.pending {
+    background: #f59e0b;
+    animation: tcDotPulse 1.5s ease-in-out infinite;
+}
+
+.tc-text-dot.success {
+    background: #3b82f6;
+}
+
+.tc-text-dot.error {
+    background: #ef4444;
+}
+
+.tc-text-wrap {
+    font-size: 12.5px;
+    color: var(--ai-muted);
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.tc-text-wrap strong {
+    color: var(--ai-text);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* 前置状态图标（替代色点） */
+.tc-text-status-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.tc-text-tag {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-left: 4px;
+}
+
+.tc-text-tag.success {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+}
+
+.tc-text-tag.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: #b45309;
+}
+
+.tc-text-tag.error {
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+}
+
+/* 深色模式 */
+.dark-mode .tc-text-wrap {
+    color: var(--ai-muted);
+}
+
+.dark-mode .tc-text-wrap strong {
+    color: var(--ai-text);
+}
+
+.dark-mode .tc-text-tag.success {
+    background: rgba(138, 180, 248, 0.2);
+    color: #cfe0ff;
+}
+
+.dark-mode .tc-text-tag.pending {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fcd34d;
+}
+
+.dark-mode .tc-text-tag.error {
+    background: rgba(248, 113, 113, 0.2);
+    color: #fecaca;
+}

@@ -104,53 +104,6 @@
     color: #c5dbff;
 }
 
-.dark-mode .chat-message.tool-card-style-inline {
-    background: var(--ai-surface-alt);
-    border-color: var(--ai-border);
-}
-
-.dark-mode .tc-inline-status.success {
-    background: rgba(138, 180, 248, 0.2);
-    color: #cfe0ff;
-}
-
-.dark-mode .tc-inline-status.pending {
-    background: rgba(251, 191, 36, 0.2);
-    color: #fcd34d;
-}
-
-.dark-mode .tc-inline-status.error {
-    background: rgba(248, 113, 113, 0.2);
-    color: #fecaca;
-}
-
-.dark-mode .tc-text-wrap {
-    color: var(--ai-muted);
-}
-
-.dark-mode .tc-text-wrap strong {
-    color: var(--ai-text);
-}
-
-.dark-mode .tc-text-tag.success {
-    background: rgba(138, 180, 248, 0.2);
-    color: #cfe0ff;
-}
-
-.dark-mode .tc-text-tag.pending {
-    background: rgba(251, 191, 36, 0.2);
-    color: #fcd34d;
-}
-
-.dark-mode .tc-text-tag.error {
-    background: rgba(248, 113, 113, 0.2);
-    color: #fecaca;
-}
-
-.dark-mode .tc-badge-desc {
-    color: var(--ai-muted);
-}
-
 .dark-mode .chat-message.streaming .streaming-label::before {
     background: linear-gradient(
         90deg,

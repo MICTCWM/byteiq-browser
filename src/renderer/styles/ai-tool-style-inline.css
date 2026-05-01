@@ -1,0 +1,137 @@
+/* ===== V2 极简行内 ===== */
+.chat-message.tool-card-style-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    background: var(--ai-surface-soft, #f1f3f4);
+    border-radius: 20px;
+    border: 1px solid var(--ai-border, rgba(0, 0, 0, 0.05));
+    line-height: 1.5;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.tc-inline-main {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+.tc-inline-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.tc-inline-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.tc-inline-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ai-text);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tc-inline-sep {
+    color: var(--ai-border, #d1d5db);
+    font-size: 10px;
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+.tc-inline-desc {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 11.5px;
+    color: var(--ai-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tc-inline-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin-left: 4px;
+}
+
+.tc-inline-status svg {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+}
+
+.tc-inline-status.success {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+}
+
+.tc-inline-status.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: #b45309;
+}
+
+.tc-inline-status.error {
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+}
+
+/* 前置状态图标（替代文字标签） */
+.tc-inline-status-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    margin-right: 2px;
+}
+
+.tc-inline-status-icon.success {
+    color: #22c55e;
+}
+
+.tc-inline-status-icon.pending {
+    color: #f59e0b;
+}
+
+.tc-inline-status-icon.error {
+    color: #ef4444;
+}
+
+/* 深色模式 */
+.dark-mode .chat-message.tool-card-style-inline {
+    background: var(--ai-surface-alt);
+    border-color: var(--ai-border);
+}
+
+.dark-mode .tc-inline-status.success {
+    background: rgba(138, 180, 248, 0.2);
+    color: #cfe0ff;
+}
+
+.dark-mode .tc-inline-status.pending {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fcd34d;
+}
+
+.dark-mode .tc-inline-status.error {
+    background: rgba(248, 113, 113, 0.2);
+    color: #fecaca;
+}

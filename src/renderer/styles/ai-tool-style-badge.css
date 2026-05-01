@@ -1,0 +1,67 @@
+/* ===== V4 徽章标签 ===== */
+.chat-message.tool-card-style-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+}
+
+.tc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    flex-shrink: 0;
+}
+
+.tc-badge svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+
+.tc-badge-desc {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 11px;
+    color: var(--ai-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 前置状态图标 */
+.tc-badge-status-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    margin-right: 2px;
+}
+
+.tc-badge-status-icon.success {
+    color: #22c55e;
+}
+
+.tc-badge-status-icon.pending {
+    color: #f59e0b;
+}
+
+.tc-badge-status-icon.error {
+    color: #ef4444;
+}
+
+/* 深色模式 */
+.dark-mode .tc-badge-desc {
+    color: var(--ai-muted);
+}

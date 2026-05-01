@@ -3,3 +3,7 @@
 @import './ai-chat-context.css';
 @import './ai-chat-dialogs.css';
 @import './ai-chat-input.css';
+@import './ai-tool-style-inline.css';
+@import './ai-tool-style-text.css';
+@import './ai-tool-style-badge.css';
+@import './ai-tool-style-todo.css';
