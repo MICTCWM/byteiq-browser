@@ -32,7 +32,17 @@ module.exports = [
         Event: 'readonly',
         CustomEvent: 'readonly',
         // Electron globals
-        electron: 'readonly'
+        electron: 'readonly',
+        // Jest globals
+        describe: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        test: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        jest: 'readonly'
       }
     },
     rules: {

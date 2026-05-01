@@ -117,7 +117,6 @@ describe('AI Todo Manager - Cache Deep Copy Fix', () => {
   test('completeTodos should mark multiple todos as completed', () => {
     const todo1 = todoManager.addTodo('Test 1', 'medium').id;
     const todo2 = todoManager.addTodo('Test 2', 'high').id;
-    const todo3 = todoManager.addTodo('Test 3', 'low').id;
 
     const result = todoManager.completeTodos([todo1, todo2]);
     expect(result.success).toBe(true);
