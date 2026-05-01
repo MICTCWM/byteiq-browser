@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "Byteiq Browser",
-    "version": "Версия 0.1.6",
+    "version": "Версия 0.1.7",
     "communityDriven": "Браузер на базе сообщества",
     "basedOn": "На базе Chromium | Electron"
   },
@@ -271,7 +271,7 @@
     "searchPlaceholder": "Поиск или ввод URL...",
     "title": "Браузер на базе сообщества",
     "subtitle": "На базе Chromium | Electron",
-    "version": "Версия 0.1.2 | Движок сообщества с открытым исходным кодом"
+    "version": "Версия 0.1.7 | Движок сообщества с открытым исходным кодом"
   },
   "status": {
     "loading": "Загрузка...",

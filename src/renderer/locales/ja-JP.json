@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "Byteiq Browser",
-    "version": "バージョン 0.1.6",
+    "version": "バージョン 0.1.7",
     "communityDriven": "コミュニティ主導の AI ブラウザ",
     "basedOn": "Chromium ベース | Electron で構築"
   },
@@ -271,7 +271,7 @@
     "searchPlaceholder": "検索または URL を入力...",
     "title": "コミュニティ主導の AI ブラウザ",
     "subtitle": "Chromium ベース | Electron で構築",
-    "version": "バージョン 0.1.2 | オープンソースコミュニティ主導"
+    "version": "バージョン 0.1.7 | オープンソースコミュニティ主導"
   },
   "status": {
     "loading": "読み込み中...",

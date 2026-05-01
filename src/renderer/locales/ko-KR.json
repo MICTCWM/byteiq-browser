@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "Byteiq Browser",
-    "version": "버전 0.1.6",
+    "version": "버전 0.1.7",
     "communityDriven": "커뮤니티 주도 AI 브라우저",
     "basedOn": "Chromium 기반 | Electron 구축"
   },
@@ -271,7 +271,7 @@
     "searchPlaceholder": "검색 또는 URL 입력...",
     "title": "커뮤니티 주도 AI 브라우저",
     "subtitle": "Chromium 기반 | Electron 구축",
-    "version": "버전 0.1.2 | 오픈 소스 커뮤니티 주도"
+    "version": "버전 0.1.7 | 오픈 소스 커뮤니티 주도"
   },
   "status": {
     "loading": "로딩 중...",

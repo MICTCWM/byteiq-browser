@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "Byteiq Browser",
-    "version": "版本 0.1.6",
+    "version": "版本 0.1.7",
     "communityDriven": "社群驅動的 AI 瀏覽器",
     "basedOn": "基於 Chromium 內核 | Electron 建構"
   },
@@ -285,7 +285,7 @@
     "searchPlaceholder": "搜尋或輸入 URL...",
     "title": "社群驅動的 AI 瀏覽器",
     "subtitle": "基於 Chromium 內核 | Electron 建構",
-    "version": "版本 0.1.2 | 開源社群驅動"
+    "version": "版本 0.1.7 | 開源社群驅動"
   },
   "status": {
     "loading": "載入中...",
