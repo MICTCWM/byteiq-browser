@@ -3,7 +3,7 @@
  * 负责发送聊天请求、Ask/Agent模式处理、流式监听
  */
 
-const { buildSystemPrompt } = require('./ai-context-utils');
+const { buildSystemPrompt } = require('../context/ai-context-utils');
 
 /**
  * 创建聊天处理器

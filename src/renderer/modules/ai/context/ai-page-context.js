@@ -4,7 +4,7 @@
  */
 
 const { extractPageContent, extractAndSetPageContext } = require('./ai-context-utils');
-const sidebarEvents = require('./ai-sidebar-events');
+const sidebarEvents = require('../chat/ai-sidebar-events');
 
 /**
  * 创建页面上下文管理器

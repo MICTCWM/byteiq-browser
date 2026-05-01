@@ -3,7 +3,7 @@
  * Verifies batch add functionality prevents cache pollution
  */
 
-const { createAiTodoManager } = require('../src/renderer/modules/ai/ai-todo-manager');
+const { createAiTodoManager } = require('../src/renderer/modules/ai/todo/ai-todo-manager');
 
 // Mock store implementation
 class MockStore {

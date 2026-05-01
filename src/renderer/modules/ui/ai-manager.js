@@ -4,23 +4,23 @@
  */
 
 const { getAIHistoryStorage } = require('../storage/ai-history-storage');
-const { createAiToolsExecutor } = require('../ai/ai-tools-executor');
-const { createAiSessionService } = require('../ai/ai-session-service');
-const { createAiMessageUI } = require('../ai/ai-message-ui');
-const { createAiHistoryUI } = require('../ai/ai-history-ui');
-const { bindAiSidebarResize, bindAskSelectionEvent } = require('../ai/ai-sidebar-events');
+const { createAiToolsExecutor } = require('../ai/tools/ai-tools-executor');
+const { createAiSessionService } = require('../ai/chat/ai-session-service');
+const { createAiMessageUI } = require('../ai/chat/ai-message-ui');
+const { createAiHistoryUI } = require('../ai/chat/ai-history-ui');
+const { bindAiSidebarResize, bindAskSelectionEvent } = require('../ai/chat/ai-sidebar-events');
 const {
   extractPageContent,
   buildSelectionContext,
   buildSystemPrompt,
   extractAndSetPageContext
-} = require('../ai/ai-context-utils');
-const { createAiAgentRunner } = require('../ai/ai-agent-runner');
-const { createAiPageContext } = require('../ai/ai-page-context');
-const { createAiChatHandler } = require('../ai/ai-chat-handler');
-const { createAiContextIsolation } = require('../ai/ai-context-isolation');
-const { createAiTodoManager } = require('../ai/ai-todo-manager');
-const { createAiToolbar } = require('../ai/ai-toolbar');
+} = require('../ai/context/ai-context-utils');
+const { createAiAgentRunner } = require('../ai/agent/ai-agent-runner');
+const { createAiPageContext } = require('../ai/context/ai-page-context');
+const { createAiChatHandler } = require('../ai/chat/ai-chat-handler');
+const { createAiContextIsolation } = require('../ai/context/ai-context-isolation');
+const { createAiTodoManager } = require('../ai/todo/ai-todo-manager');
+const { createAiToolbar } = require('../ai/chat/ai-toolbar');
 const { createContextMenu } = require('./ai-context-pie');
 const { createContextCompress } = require('./ai-context-compress');
 const { createEventManager } = require('./ai-manager-events');

@@ -1,0 +1,254 @@
+/**
+ * AI 工具定义 - 待办与结束会话类
+ * 包含 add_todo, add_todos, list_todos, complete_todo, complete_todos, remove_todo, end_session
+ */
+
+/**
+ * 格式化待办列表为文本展示
+ * @param {Array} allTodos - 所有待办项
+ * @returns {string}
+ */
+function formatTodoList(allTodos) {
+  if (!allTodos || allTodos.length === 0) return '暂无待办项';
+  return allTodos
+    .map((t, idx) => {
+      const mark = t.completed ? '[x]' : '[ ]';
+      const pri = t.priority ? `(${t.priority})` : '';
+      const num = idx + 1;
+      return `${num}. ${mark} ${pri} ${t.title}`;
+    })
+    .join('\n');
+}
+
+/**
+ * 为待办工具结果附加当前列表
+ * @param {Object} result - 工具执行结果
+ * @returns {Object}
+ */
+function attachCurrentList(result) {
+  if (result.success && result.allTodos) {
+    result.currentList = formatTodoList(result.allTodos);
+  }
+  return result;
+}
+
+const todoAndSessionDefs = [
+  {
+    name: 'add_todo',
+    description:
+      '【核心工具】添加待办项。' +
+      '【触发场景】用户说"要做..."、"需要..."、"记得..."、"有个任务..."；或执行多步骤工作时，拆分每个步骤为独立待办项；' +
+      '【优先级】high=紧急/截止期限/用户强调; medium=常规任务(默认); low=可选/优化项。' +
+      '【最佳实践】复杂任务前先 list_todos → 逐步 add_todo → complete_todo标记完成。' +
+      '【标题规范】使用清晰的行动词：「阅读XX文档」「完成XX代码」而不是「XX相关」。',
+    parameters: {
+      type: 'object',
+      properties: {
+        title: {
+          type: 'string',
+          description: '待办项标题（清晰的行动项，≤200字）',
+          maxLength: 200
+        },
+        priority: {
+          type: 'string',
+          enum: ['low', 'medium', 'high'],
+          description: 'high=紧急/有期限; medium=常规(默认); low=可选'
+        }
+      },
+      required: ['title']
+    },
+    async execute(context, args) {
+      const title = String(args?.title || '').trim();
+      if (!title) {
+        return { success: false, error: 'Title cannot be empty' };
+      }
+      const priority = args?.priority || 'medium';
+      const result = context.getTodoManager().addTodo(title, priority);
+      // 添加后自动附带当前待办列表，让用户直观看到更新结果
+      // 使用 addTodo 返回的 allTodos 避免再次读取时的存储键不一致问题
+      return attachCurrentList(result);
+    }
+  },
+  {
+    name: 'add_todos',
+    description:
+      '【批量添加工具】一次性添加多个待办项。' +
+      '【触发场景】用户一次提出多个任务（如"帮我做A、B、C三件事"）；或拆分复杂任务为多个步骤时；' +
+      '【优势】比多次调用 add_todo 更高效，减少工具调用次数。' +
+      '【优先级】high=紧急/截止期限/用户强调; medium=常规任务(默认); low=可选/优化项。',
+    parameters: {
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          description: '待办项数组，每项包含 title（必填）和 priority（可选）',
+          items: {
+            type: 'object',
+            properties: {
+              title: {
+                type: 'string',
+                description: '待办项标题（清晰的行动项，≤200字）',
+                maxLength: 200
+              },
+              priority: {
+                type: 'string',
+                enum: ['low', 'medium', 'high'],
+                description: 'high=紧急; medium=常规(默认); low=可选'
+              }
+            },
+            required: ['title']
+          }
+        }
+      },
+      required: ['items']
+    },
+    async execute(context, args) {
+      const items = args?.items;
+      if (!Array.isArray(items) || items.length === 0) {
+        return { success: false, error: 'Items must be a non-empty array' };
+      }
+      const result = context.getTodoManager().addTodos(items);
+      return attachCurrentList(result);
+    }
+  },
+  {
+    name: 'list_todos',
+    description:
+      '【必用工具】显示待办项列表，支持筛选（pending/completed/all）。' +
+      '【何时调用】用户问"还有什么要做"、"任务进度"、"还剩什么"；或执行复杂任务前检查现有待办；或完成待办后确认状态。' +
+      '【默认模式】filter=pending（推荐，仅显示未完成）；定期调用 all 保持全局同步。' +
+      '【ID提取】结果中 {id:xxx} 是后续调用 complete_todo/remove_todo 的唯一参数。' +
+      '【最佳实践】开始任何复杂工作前必须先 list_todos("pending")，完成任务后再确认一次。',
+    parameters: {
+      type: 'object',
+      properties: {
+        filter: {
+          type: 'string',
+          enum: ['all', 'pending', 'completed'],
+          description: 'pending=未完成(推荐); all=全部; completed=已完成'
+        }
+      }
+    },
+    async execute(context, args) {
+      const filter = args?.filter || 'pending';
+      const result = context.getTodoManager().listTodos(filter);
+      return result;
+    }
+  },
+  {
+    name: 'complete_todo',
+    description:
+      '【关键工具】标记待办项已完成。' +
+      '【何时调用】任务步骤成功执行完毕且获得明确反馈后立即调用。' +
+      '【获取ID】必须从 list_todos 结果中的 {id:xxx} 准确复制（否则操作失败）。' +
+      '【操作流程】1.执行任务 → 2.验证成功 → 3.complete_todo(id) → 4.list_todos确认。' +
+      '【注意】不要在任务完成前调用；已完成项会自动从 pending 视图消失。',
+    parameters: {
+      type: 'object',
+      properties: {
+        todo_id: {
+          type: 'string',
+          description:
+            '待办项的 ID（从 list_todos 结果中的 (id: xxx) 提取，格式如 todo-1、todo-2；也可直接传入序号如 "1"）'
+        }
+      },
+      required: ['todo_id']
+    },
+    async execute(context, args) {
+      const todoId = String(args?.todo_id || '').trim();
+      if (!todoId) {
+        return { success: false, error: 'Todo ID cannot be empty' };
+      }
+      const result = context.getTodoManager().completeTodo(todoId);
+      // 完成后自动附带当前待办列表
+      // 使用 completeTodo 返回的 allTodos 避免再次读取时的存储键不一致问题
+      return attachCurrentList(result);
+    }
+  },
+  {
+    name: 'complete_todos',
+    description:
+      '【批量完成工具】一次性标记多个待办项为已完成。' +
+      '【触发场景】多个任务步骤同时完成时（如"把A、B、C都标记完成"）；或批量收尾时；' +
+      '【优势】比多次调用 complete_todo 更高效，减少工具调用次数。' +
+      '【获取ID】从 list_todos 结果中的 (id: xxx) 提取，支持序号如 "1" 或完整ID如 "todo-1"。' +
+      '【注意】未找到的ID会被跳过并在返回中提示。',
+    parameters: {
+      type: 'object',
+      properties: {
+        todo_ids: {
+          type: 'array',
+          description: '待办项ID数组（从 list_todos 结果中提取）',
+          items: {
+            type: 'string',
+            description: '待办项ID，如 "todo-1" 或序号 "1"'
+          }
+        }
+      },
+      required: ['todo_ids']
+    },
+    async execute(context, args) {
+      const todoIds = args?.todo_ids;
+      if (!Array.isArray(todoIds) || todoIds.length === 0) {
+        return { success: false, error: 'todo_ids must be a non-empty array' };
+      }
+      const result = context.getTodoManager().completeTodos(todoIds);
+      return attachCurrentList(result);
+    }
+  },
+  {
+    name: 'remove_todo',
+    description:
+      '【谨慎工具】删除待办项（不可恢复）。' +
+      '【何时调用】仅当用户明确说"删除"、"取消"、"不需要"、"废弃"这个待办时调用。' +
+      '【重要区分】已完成的项应用 complete_todo，不用 remove_todo。' +
+      '【获取ID】从 list_todos 结果中的 {id:xxx} 提取。' +
+      '【建议】删除前建议询问确认（"确定要删除xxx吗？"），以免误删。',
+    parameters: {
+      type: 'object',
+      properties: {
+        todo_id: {
+          type: 'string',
+          description:
+            '待办项的 ID（从 list_todos 结果中的 (id: xxx) 提取，格式如 todo-1；也可直接传入序号如 "1"）'
+        }
+      },
+      required: ['todo_id']
+    },
+    async execute(context, args) {
+      const todoId = String(args?.todo_id || '').trim();
+      if (!todoId) {
+        return { success: false, error: 'Todo ID cannot be empty' };
+      }
+      const result = context.getTodoManager().removeTodo(todoId);
+      // 删除后自动附带当前待办列表
+      // 使用 removeTodo 返回的 allTodos 避免再次读取时的存储键不一致问题
+      return attachCurrentList(result);
+    }
+  },
+
+  {
+    name: 'end_session',
+    description:
+      '【必须调用】当任务完成、用户问题已解答、或已获取到所需信息时，必须立即调用此工具结束会话。' +
+      '绝对不要在完成目标后继续获取信息或执行多余操作。' +
+      '必须通过 summary 参数提供最终总结信息，将直接展示给用户。',
+    parameters: {
+      type: 'object',
+      properties: {
+        summary: {
+          type: 'string',
+          description: '任务完成后的总结信息，将直接展示给用户，支持 Markdown 格式'
+        }
+      },
+      required: ['summary']
+    },
+    async execute(_context, args) {
+      return { success: true, ended: true, summary: args?.summary || '' };
+    }
+  }
+];
+
+module.exports = {
+  todoAndSessionDefs
+};

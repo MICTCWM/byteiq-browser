@@ -2,10 +2,13 @@
  * AI Agent 模式执行器
  */
 
-const { getAiToolsSchema } = require('./ai-tools-registry');
-const { renderMarkdownToElement } = require('./ai-markdown-renderer');
-const { parseToolCallsFromText, removeToolCallTextFromContent } = require('./ai-tool-call-parser');
-const { createToolCardUI } = require('./ai-tool-card-ui');
+const { getAiToolsSchema } = require('../tools/ai-tools-registry');
+const { renderMarkdownToElement } = require('../chat/ai-markdown-renderer');
+const {
+  parseToolCallsFromText,
+  removeToolCallTextFromContent
+} = require('../tools/ai-tool-call-parser');
+const { createToolCardUI } = require('../tools/ai-tool-card-ui');
 const { createAgentPromptBuilder } = require('./ai-agent-prompt-builder');
 
 function createAiAgentRunner(options) {

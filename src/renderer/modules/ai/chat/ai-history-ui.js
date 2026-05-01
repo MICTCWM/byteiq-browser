@@ -3,7 +3,7 @@
  * 支持：日期分组、搜索、相对时间、消息预览、永久删除
  */
 
-const { createToolCardUI } = require('./ai-tool-card-ui');
+const { createToolCardUI } = require('../tools/ai-tool-card-ui');
 
 function createAiHistoryUI(options) {
   const {
