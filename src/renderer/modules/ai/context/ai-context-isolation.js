@@ -35,8 +35,10 @@ function createAiContextIsolation(options = {}) {
       if (logger) {
         logger(`[ai-context-isolation] ${message}`, data || '');
       }
-    } else if (level === 'warn' || level === 'error') {
-      console[level](`[ai-context-isolation] ${message}`, data || '');
+    } else if (level === 'warn') {
+      console.warn(`[ai-context-isolation] ${message}`, data || '');
+    } else if (level === 'error') {
+      console.error(`[ai-context-isolation] ${message}`, data || '');
     }
   }
 

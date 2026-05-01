@@ -4,15 +4,53 @@
  */
 
 /**
- * 创建 Agent 提示词构建器
- * @param {Object} options
- * @param {Object} options.todoManager - 待办管理器
- * @param {Function} options.getPageList - 获取页面列表
- * @param {Function} options.getCurrentPageInfo - 获取当前页面信息
- * @param {Function} options.getTaskState - 获取任务状态
- * @param {Function} options.t - 翻译函数
- * @param {Function} options.buildSystemPrompt - 基础系统提示词构建函数
+ * 确保 tool 消息与 assistant+tool_calls 消息配对完整
+ * 截断/重组操作可能打破配对，导致 API 400 错误
+ * 规则：1) 每个 tool 消息必须有匹配的 assistant+tool_calls
+ *       2) assistant+tool_calls 的每个 call_id 必须有对应的 tool 结果
  */
+function ensureToolMessagePairing(messages) {
+  if (!messages || messages.length <= 1) return messages;
+
+  // 收集所有 assistant+tool_calls 声明的 call id
+  const declaredCallIds = new Set();
+  for (const msg of messages) {
+    if (msg.role === 'assistant' && msg.tool_calls) {
+      for (const call of msg.tool_calls) {
+        declaredCallIds.add(call.id);
+      }
+    }
+  }
+
+  // 收集所有有效 tool 消息的 call id
+  const presentResultIds = new Set();
+  for (const msg of messages) {
+    if (msg.role === 'tool' && declaredCallIds.has(msg.tool_call_id)) {
+      presentResultIds.add(msg.tool_call_id);
+    }
+  }
+
+  // 过滤消息：移除孤立项
+  return messages.filter(msg => {
+    if (msg.role === 'tool') {
+      // tool 消息必须有匹配的 assistant+tool_calls
+      return declaredCallIds.has(msg.tool_call_id);
+    }
+    if (msg.role === 'assistant' && msg.tool_calls) {
+      // assistant+tool_calls 的所有 call 都必须有对应的 tool 结果
+      // 否则 API 也会报错；降级为普通 assistant 消息
+      const allHaveResults = msg.tool_calls.every(call => presentResultIds.has(call.id));
+      if (!allHaveResults) {
+        // 降级：移除 tool_calls，保留文本内容
+        delete msg.tool_calls;
+        if (!msg.content) msg.content = '';
+      }
+      return true;
+    }
+    return true;
+  });
+}
+
 function createAgentPromptBuilder(options) {
   const { todoManager, getPageList, getCurrentPageInfo, getTaskState, t, buildSystemPrompt } =
     options;
@@ -94,7 +132,7 @@ function createAgentPromptBuilder(options) {
    * 恢复 thinking 内容以保持完整上下文
    */
   function formatHistoryMessages(rawHistory) {
-    return rawHistory
+    const formatted = rawHistory
       .filter(m => m.role !== 'system')
       .map(m => {
         if (m.role === 'tool') {
@@ -132,6 +170,8 @@ function createAgentPromptBuilder(options) {
             : m.content;
         return { role: m.role, content };
       });
+
+    return ensureToolMessagePairing(formatted);
   }
 
   /**
@@ -188,11 +228,13 @@ function createAgentPromptBuilder(options) {
 
     // 合并并排序（保持时间顺序）
     const allKept = [...todoMessages, ...recentOtherToolMessages, ...recentOtherMessages];
-    return allKept.sort((a, b) => {
+    const sorted = allKept.sort((a, b) => {
       const aIdx = formattedHistory.indexOf(a);
       const bIdx = formattedHistory.indexOf(b);
       return aIdx - bIdx;
     });
+
+    return ensureToolMessagePairing(sorted);
   }
 
   /**
@@ -298,7 +340,7 @@ function createAgentPromptBuilder(options) {
 
     // 最终截断，保留至少5条消息
     const finalMessages = unique.slice(-Math.max(5, maxLiveMessages - 2));
-    return [systemMsg, ...finalMessages];
+    return ensureToolMessagePairing([systemMsg, ...finalMessages]);
   }
 
   /**
@@ -324,10 +366,12 @@ function createAgentPromptBuilder(options) {
     truncateHistorySmart,
     enhanceSystemPromptWithPages,
     truncateLiveHistory,
-    refreshTodoInSystemPrompt
+    refreshTodoInSystemPrompt,
+    ensureToolMessagePairing
   };
 }
 
 module.exports = {
-  createAgentPromptBuilder
+  createAgentPromptBuilder,
+  ensureToolMessagePairing
 };

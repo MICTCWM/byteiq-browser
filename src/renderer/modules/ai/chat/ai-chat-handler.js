@@ -4,6 +4,7 @@
  */
 
 const { buildSystemPrompt } = require('../context/ai-context-utils');
+const { ensureToolMessagePairing } = require('../agent/ai-agent-prompt-builder');
 
 /**
  * 创建聊天处理器
@@ -241,7 +242,7 @@ function createAiChatHandler(deps) {
         });
       const messages = [
         { role: 'system', content: systemPrompt + todoPrompt },
-        ...formattedHistory,
+        ...ensureToolMessagePairing(formattedHistory),
         { role: 'user', content: userText }
       ];
 
