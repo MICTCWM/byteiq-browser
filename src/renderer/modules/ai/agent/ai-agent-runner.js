@@ -256,8 +256,10 @@ function createAiAgentRunner(options) {
         }
 
         if (result.type === 'message') {
-          // 当模型不支持 tools API 时（usedToolsFallback），尝试从文本中解析工具调用
-          if (result.usedToolsFallback && result.content) {
+          // 当模型不支持 tools API 时（usedToolsFallback），或用户主动关闭原生工具调用时，
+          // 尝试从文本中解析工具调用
+          const nativeToolCall = store.get('settings.nativeToolCall', true);
+          if ((result.usedToolsFallback || !nativeToolCall) && result.content) {
             const parsedToolCalls = parseToolCallsFromText(result.content);
             if (parsedToolCalls && parsedToolCalls.length > 0) {
               result = {

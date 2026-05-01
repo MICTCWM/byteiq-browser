@@ -30,6 +30,61 @@ function parseToolCallsFromText(text) {
   const calls = [];
   let callIdCounter = 0;
 
+  // 格式0: <invoke name="xxx"> <parameter name="k">v</parameter> ... </invoke>
+  // 说明：部分模型会输出 XML 风格的工具调用（非 tools API）。
+  const invokeRegex = /<invoke\s+name\s*=\s*"([^"]+)"\s*>\s*([\s\S]*?)\s*<\/invoke>/g;
+  let invokeMatch;
+  while ((invokeMatch = invokeRegex.exec(text)) !== null) {
+    const name = (invokeMatch[1] || '').trim();
+    if (!name || !KNOWN_TOOL_NAMES.has(name)) continue;
+
+    const body = invokeMatch[2] || '';
+    const args = {};
+    const paramRegex = /<parameter\s+name\s*=\s*"([^"]+)"\s*>\s*([\s\S]*?)\s*<\/parameter>/g;
+    let paramMatch;
+    while ((paramMatch = paramRegex.exec(body)) !== null) {
+      const key = (paramMatch[1] || '').trim();
+      if (!key) continue;
+      const rawValue = (paramMatch[2] || '').trim();
+      if (!rawValue) {
+        args[key] = '';
+        continue;
+      }
+
+      // 尝试 JSON 解析（数组/对象），否则按字符串处理
+      if (
+        (rawValue.startsWith('{') && rawValue.endsWith('}')) ||
+        (rawValue.startsWith('[') && rawValue.endsWith(']'))
+      ) {
+        try {
+          args[key] = JSON.parse(rawValue);
+          continue;
+        } catch {
+          // fallthrough
+        }
+      }
+      // 逗号分隔字符串自动转数组（针对 todo_ids 等数组参数）
+      if (key.endsWith('_ids') || key === 'items') {
+        const parts = rawValue
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+        if (parts.length > 1) {
+          args[key] = parts;
+          continue;
+        }
+      }
+      args[key] = rawValue;
+    }
+
+    calls.push({
+      id: `parsed_${++callIdCounter}_${Date.now()}`,
+      name,
+      arguments: args
+    });
+  }
+  if (calls.length > 0) return calls;
+
   // 格式1: <tool_call>...</tool_call> (Qwen/Hermes)
   const hermesRegex = /<tool_call>\s*\n?([\s\S]*?)\n?\s*<\/tool_call>/g;
   let match;
@@ -96,6 +151,13 @@ function removeToolCallTextFromContent(text) {
   if (!text) return text;
   // 移除 <tool_call>...</tool_call> 块
   let cleaned = text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '');
+
+  // 移除 <invoke ...>...</invoke> 块（XML 风格工具调用）
+  cleaned = cleaned.replace(/<invoke\s+name\s*=\s*"[^"]+"\s*>[\s\S]*?<\/invoke>/g, '');
+
+  // 移除部分模型多余输出的尾标签（不影响语义但会污染正文）
+  cleaned = cleaned.replace(/<\/minimax:tool_call>/g, '');
+
   // 移除包含工具调用的 ```json ... ``` 块
   cleaned = cleaned.replace(/```json\s*\n\s*\{[\s\S]*?"name"\s*:[\s\S]*?\}\s*\n```/g, '');
   // 移除独立的工具调用 JSON 行

@@ -88,7 +88,9 @@ function buildToolsSystemPrompt(store) {
   if (defs.length === 0) return '';
 
   const lines = [
-    '你可以使用以下工具来完成任务。当需要调用工具时，请使用以下 XML 格式：',
+    '你可以使用以下工具来完成任务。',
+    '当需要调用工具时：只输出 <invoke>...</invoke> 块，不要输出任何额外的外层标签（例如 <minimax:tool_call> 或 </minimax:tool_call>）。',
+    '工具调用 XML 格式如下：',
     '<invoke name="工具名">',
     '<parameter name="参数名">参数值</parameter>',
     '</invoke>',

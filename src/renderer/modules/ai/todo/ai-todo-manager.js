@@ -20,8 +20,61 @@ function createAiTodoManager(options) {
       };
     }
 
+    // 保护：避免一次性批量添加过多，导致 UI/模型输出膨胀
+    const MAX_BATCH = 30;
+    const slice = items.slice(0, MAX_BATCH);
+
+    // 清洗输入 + 批次内去重
+    const normalized = [];
+    const seenTitles = new Set();
+    const skipped = [];
+    for (let i = 0; i < slice.length; i++) {
+      const item = slice[i];
+      const rawTitle = String(item?.title || '').trim();
+      if (!rawTitle) {
+        skipped.push({ index: i, reason: 'empty_title' });
+        continue;
+      }
+
+      const title = rawTitle.length > 200 ? rawTitle.slice(0, 200) : rawTitle;
+      const titleKey = title.toLowerCase();
+      if (seenTitles.has(titleKey)) {
+        skipped.push({ index: i, title, reason: 'duplicate_in_batch' });
+        continue;
+      }
+      seenTitles.add(titleKey);
+
+      normalized.push({
+        title,
+        priority: item?.priority || 'medium'
+      });
+    }
+
+    if (normalized.length === 0) {
+      return {
+        success: false,
+        error: 'All titles are empty',
+        skipped,
+        allTodos: storage.readTodos()
+      };
+    }
+
     const todos = storage.readTodos();
+
+    // 与现有 pending 去重（同标题不重复添加）
+    const pendingTitleSet = new Set(
+      todos
+        .filter(t => t && !t.completed)
+        .map(t =>
+          String(t.title || '')
+            .trim()
+            .toLowerCase()
+        )
+        .filter(Boolean)
+    );
+
     const added = [];
+    const addedIds = [];
 
     // 计算当前最大序号（一次性，避免重复调用 readTodos）
     let maxSeq = 0;
@@ -33,28 +86,38 @@ function createAiTodoManager(options) {
       }
     }
 
-    // 批量添加，使用顺序递增的 ID
-    for (const item of items) {
-      const text = String(item.title || '').trim();
-      if (!text) continue;
+    // 批量添加：保持输入顺序（第 1 项显示在最上方）
+    // 由于 todos 采用 unshift（新项在最前），这里倒序插入。
+    for (let i = normalized.length - 1; i >= 0; i--) {
+      const item = normalized[i];
+      const titleKey = String(item.title || '')
+        .trim()
+        .toLowerCase();
+      if (pendingTitleSet.has(titleKey)) {
+        skipped.push({ index: i, title: item.title, reason: 'duplicate_existing_pending' });
+        continue;
+      }
 
       maxSeq++; // 递增序号
       const todo = {
         id: `todo-${maxSeq}`,
-        title: text,
+        title: item.title,
         priority: storage.normalizePriority(item.priority),
         completed: false,
         createdAt: Date.now(),
         completedAt: null
       };
       todos.unshift(todo);
-      added.push(todo);
+      added.unshift(todo);
+      addedIds.unshift(todo.id);
+      pendingTitleSet.add(titleKey);
     }
 
     if (added.length === 0) {
       return {
         success: false,
-        error: 'All titles are empty',
+        error: 'No items added (all duplicates or empty)',
+        skipped,
         allTodos: storage.readTodos()
       };
     }
@@ -64,7 +127,9 @@ function createAiTodoManager(options) {
     return {
       success: true,
       added,
-      message: `已批量添加 ${added.length} 个待办项（ID: ${added.map(t => t.id).join(', ')}）`,
+      addedIds,
+      skipped,
+      message: `已批量添加 ${added.length} 个待办项（ID: ${addedIds.join(', ')}）`,
       allTodos: updatedTodos
     };
   }

@@ -75,13 +75,15 @@ const todoAndSessionDefs = [
       '【批量添加工具】一次性添加多个待办项。' +
       '【触发场景】用户一次提出多个任务（如"帮我做A、B、C三件事"）；或拆分复杂任务为多个步骤时；' +
       '【优势】比多次调用 add_todo 更高效，减少工具调用次数。' +
-      '【优先级】high=紧急/截止期限/用户强调; medium=常规任务(默认); low=可选/优化项。',
+      '【优先级】high=紧急/截止期限/用户强调; medium=常规任务(默认); low=可选/优化项。' +
+      '【限制】单次最多 30 条，超出会被截断；空标题/重复标题会被跳过并在 skipped 中说明。',
     parameters: {
       type: 'object',
       properties: {
         items: {
           type: 'array',
-          description: '待办项数组，每项包含 title（必填）和 priority（可选）',
+          description:
+            '待办项数组（建议直接传 JSON 数组）。每项包含 title（必填，≤200字）和 priority（可选，默认 medium）。',
           items: {
             type: 'object',
             properties: {
