@@ -132,6 +132,9 @@ function createTodoRenderer(deps) {
           // 这里可以更复杂，但通常 add_todos 是在列表末尾添加 N 项
           // 我们暂且让所有项都播放生长动画，或者通过某种标记识别
           isNew = true;
+        } else if (toolName === 'complete_todo' || toolName === 'complete_todos') {
+          // 完成操作：已完成的项播放描边动画
+          isNew = item.completed;
         }
 
         itemEl.classList.add(isNew ? 'is-new' : 'is-old');

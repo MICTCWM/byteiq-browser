@@ -63,14 +63,19 @@ function parseToolCallsFromText(text) {
           // fallthrough
         }
       }
-      // 逗号分隔字符串自动转数组（针对 todo_ids 等数组参数）
+      // 逗号分隔字符串自动转数组（针对 todo_ids / items 等数组参数）
       if (key.endsWith('_ids') || key === 'items') {
         const parts = rawValue
           .split(',')
           .map(s => s.trim())
           .filter(Boolean);
         if (parts.length > 1) {
-          args[key] = parts;
+          // items 期望对象数组 [{title}]，纯字符串自动提升
+          if (key === 'items') {
+            args[key] = parts.map(p => ({ title: p }));
+          } else {
+            args[key] = parts;
+          }
           continue;
         }
       }

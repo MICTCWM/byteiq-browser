@@ -167,6 +167,12 @@
     }
 }
 
+@keyframes todo-stroke-check {
+    100% {
+        stroke-dashoffset: 0;
+    }
+}
+
 /* 待办项通用：旧事项整体下滑渐显 */
 .tc-todo-item.is-old {
     opacity: 0;
@@ -220,7 +226,12 @@
 }
 
 /* 非 .is-new 状态下的默认显示（防止旧事项不显示） */
-.tc-todo-item.is-old .todo-dashed-circle,
+.tc-todo-item.is-old .todo-dashed-circle {
+    stroke-dashoffset: 0;
+    opacity: 1;
+}
+
+/* 旧事项中已完成的 checkmark 直接显示（无动画） */
 .tc-todo-item.is-old .todo-checkmark-circle,
 .tc-todo-item.is-old .todo-checkmark-check {
     stroke-dashoffset: 0;

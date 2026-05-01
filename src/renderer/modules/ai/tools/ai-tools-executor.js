@@ -133,9 +133,20 @@ function createAiToolsExecutor(options) {
     for (const key of Object.keys(props)) {
       if (args[key] === undefined || args[key] === null) continue;
       const expectedType = props[key].type;
-      if (expectedType && typeof args[key] !== expectedType) {
-        return `Invalid argument type: ${key} should be ${expectedType}`;
+      if (!expectedType) continue;
+
+      const value = args[key];
+      let ok;
+
+      if (expectedType === 'array') {
+        ok = Array.isArray(value);
+      } else if (expectedType === 'object') {
+        ok = typeof value === 'object' && !Array.isArray(value);
+      } else {
+        ok = typeof value === expectedType;
       }
+
+      if (!ok) return `Invalid argument type: ${key} should be ${expectedType}`;
     }
 
     return '';

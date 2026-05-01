@@ -105,7 +105,21 @@ const todoAndSessionDefs = [
       required: ['items']
     },
     async execute(context, args) {
-      const items = args?.items;
+      let items = args?.items;
+      // 容错：逗号分隔字符串自动转数组
+      if (typeof items === 'string' && items.trim()) {
+        items = items
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+      }
+      // 容错：字符串数组自动提升为对象数组 [{title}]
+      if (Array.isArray(items)) {
+        items = items.map(item => {
+          if (typeof item === 'string') return { title: item };
+          return item;
+        });
+      }
       if (!Array.isArray(items) || items.length === 0) {
         return { success: false, error: 'Items must be a non-empty array' };
       }
@@ -190,7 +204,14 @@ const todoAndSessionDefs = [
       required: ['todo_ids']
     },
     async execute(context, args) {
-      const todoIds = args?.todo_ids;
+      let todoIds = args?.todo_ids;
+      // 容错：逗号分隔字符串自动转数组
+      if (typeof todoIds === 'string' && todoIds.trim()) {
+        todoIds = todoIds
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+      }
       if (!Array.isArray(todoIds) || todoIds.length === 0) {
         return { success: false, error: 'todo_ids must be a non-empty array' };
       }
