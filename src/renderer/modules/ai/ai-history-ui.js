@@ -3,6 +3,8 @@
  * 支持：日期分组、搜索、相对时间、消息预览、永久删除
  */
 
+const { createToolCardUI } = require('./ai-tool-card-ui');
+
 function createAiHistoryUI(options) {
   const {
     documentRef,
@@ -260,33 +262,23 @@ function createAiHistoryUI(options) {
   }
 
   /**
-   * 渲染历史工具卡片
+   * 渲染历史工具卡片（使用结构化卡片 UI）
    */
+  const historyToolCardUI = createToolCardUI({
+    documentRef,
+    getPageList: () => [],
+    store: options.store
+  });
+
   function renderHistoryToolCard(toolName, status, description) {
     const msg = documentRef.createElement('div');
-    msg.className = 'chat-message ai tool-card';
-
-    const header = documentRef.createElement('div');
-    header.className = 'tool-card-header';
-
-    const titleEl = documentRef.createElement('div');
-    titleEl.className = 'tool-card-title';
-    titleEl.textContent = getToolTitle(toolName);
-    header.appendChild(titleEl);
-
-    if (status) {
-      const statusEl = documentRef.createElement('span');
-      statusEl.className = `tool-card-status ${status}`;
-      statusEl.textContent = getToolStatusLabel(status);
-      header.appendChild(statusEl);
-    }
-
-    const descEl = documentRef.createElement('div');
-    descEl.className = 'tool-card-desc';
-    descEl.textContent = description || '';
-    msg.appendChild(header);
-    msg.appendChild(descEl);
-
+    msg.className = 'chat-message tool-card';
+    historyToolCardUI.renderToolCard(msg, {
+      title: getToolTitle(toolName),
+      description: description || '',
+      status: status || 'success',
+      toolName: toolName || ''
+    });
     aiChatArea.appendChild(msg);
     return msg;
   }
@@ -299,11 +291,6 @@ function createAiHistoryUI(options) {
       end_session: '结束会话'
     };
     return titles[toolName] || toolName || '工具';
-  }
-
-  function getToolStatusLabel(status) {
-    const labels = { success: '已完成', error: '失败', pending: '执行中' };
-    return labels[status] || '状态';
   }
 
   async function renderSessionChat(session) {

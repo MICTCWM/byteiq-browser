@@ -49,7 +49,7 @@ function createAiAgentRunner(options) {
   let agentStreamingTaskId = null;
 
   // 创建工具卡片 UI 实例
-  const toolCardUI = createToolCardUI({ documentRef, getPageList });
+  const toolCardUI = createToolCardUI({ documentRef, getPageList, store });
 
   // 创建提示词构建器实例
   const promptBuilder = createAgentPromptBuilder({
@@ -321,7 +321,9 @@ function createAiAgentRunner(options) {
             toolCardUI.renderToolCard(target, {
               title: toolCardUI.getToolTitle(toolCall.name),
               description: toolCardUI.buildToolCallDescription(toolCall),
-              status: 'pending'
+              status: 'pending',
+              toolName: toolCall.name,
+              args: toolCall.arguments
             });
           });
 
@@ -416,7 +418,10 @@ function createAiAgentRunner(options) {
             toolCardUI.renderToolCard(target, {
               title: toolCardUI.getToolTitle(toolCall.name),
               description: summary.text,
-              status: summary.status
+              status: summary.status,
+              toolName: toolCall.name,
+              args: toolCall.arguments,
+              toolResult
             });
             // 更新任务状态追踪
             if (typeof updateTaskState === 'function') {

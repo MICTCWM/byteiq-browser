@@ -139,6 +139,18 @@ function bindBrowserSettingsEvents(deps) {
     });
   }
 
+  // 工具卡片样式
+  const toolCardStyleSelect = document.getElementById('tool-card-style-select');
+  if (toolCardStyleSelect) {
+    const savedStyle = store.get('settings.toolCardStyle', 'inline');
+    toolCardStyleSelect.value = savedStyle;
+
+    toolCardStyleSelect.addEventListener('change', () => {
+      const style = toolCardStyleSelect.value;
+      store.set('settings.toolCardStyle', style);
+    });
+  }
+
   // 缩放控制
   zoomInBtn.addEventListener('click', () => {
     const wv = document.getElementById(`webview-${tabManager.getActiveTabId()}`);

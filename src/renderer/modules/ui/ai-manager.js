@@ -431,7 +431,8 @@ function createAiManager(options) {
     setActiveSessionId,
     onSelectSession: switchToSession,
     addChatMessage,
-    aiChatArea
+    aiChatArea,
+    store
   });
   renderSessionsList = historyUI.renderSessionsList;
   renderSessionChat = historyUI.renderSessionChat;
