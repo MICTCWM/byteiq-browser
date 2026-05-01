@@ -386,7 +386,8 @@ function bindAiSettingsEvents(deps) {
     setAiModelStatus,
     updateAiModelOptions,
     syncAiModelSelection,
-    refreshAiModelList
+    refreshAiModelList,
+    renderCandidateModels
   };
 }
 

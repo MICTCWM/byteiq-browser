@@ -193,6 +193,19 @@
     animation: todo-fade-in 0.3s ease-out 0.6s forwards;
 }
 
+.tc-todo-item.is-new .todo-checkmark-circle {
+    stroke-dasharray: 60; /* 2 * PI * 9 ≈ 56.5 */
+    stroke-dashoffset: 60;
+    animation: todo-stroke-circle 0.5s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.tc-todo-item.is-new .todo-checkmark-check {
+    stroke-dasharray: 20;
+    stroke-dashoffset: 20;
+    /* 等圆圈动画快结束时开始勾号动画 */
+    animation: todo-stroke-check 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.4s forwards;
+}
+
 .tc-todo-item.is-new .tc-todo-priority {
     opacity: 0;
     transform: translateY(-12px);
@@ -207,9 +220,13 @@
 }
 
 /* 非 .is-new 状态下的默认显示（防止旧事项不显示） */
-.tc-todo-item.is-old .todo-dashed-circle {
+.tc-todo-item.is-old .todo-dashed-circle,
+.tc-todo-item.is-old .todo-checkmark-circle,
+.tc-todo-item.is-old .todo-checkmark-check {
     stroke-dashoffset: 0;
+    opacity: 1;
 }
+
 .tc-todo-item.is-old .todo-num-text,
 .tc-todo-item.is-old .tc-todo-priority,
 .tc-todo-item.is-old .tc-todo-item-title {

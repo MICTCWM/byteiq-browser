@@ -170,9 +170,7 @@ function bindSettingsAndPanelEvents(options) {
           }
         }
         if (options.aiModelCandidatesContainer) {
-          const models = store.get('settings.aiModelCandidates', []);
-          options.aiModelCandidatesContainer.textContent =
-            Array.isArray(models) && models.length > 0 ? models.join(' , ') : '（未添加）';
+          aiSettingsHelpers.renderCandidateModels();
         }
         if (options.aiContextSizeInput) {
           const ctxSize = store.get('settings.aiContextSize', 8192);
