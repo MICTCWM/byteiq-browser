@@ -83,8 +83,43 @@ function getAiToolByName(name, store) {
   return getAiToolDefinitions(store).find(def => def.name === name) || null;
 }
 
+function buildToolsSystemPrompt(store) {
+  const defs = getAiToolDefinitions(store);
+  if (defs.length === 0) return '';
+
+  const lines = [
+    '你可以使用以下工具来完成任务。当需要调用工具时，请使用以下 XML 格式：',
+    '<invoke name="工具名">',
+    '<parameter name="参数名">参数值</parameter>',
+    '</invoke>',
+    '',
+    '可用工具列表：',
+    ''
+  ];
+
+  defs.forEach(def => {
+    lines.push(`### ${def.name}`);
+    lines.push(`${def.description}`);
+    if (def.parameters && def.parameters.properties) {
+      const props = def.parameters.properties;
+      const required = def.parameters.required || [];
+      lines.push('参数：');
+      for (const [key, schema] of Object.entries(props)) {
+        const req = required.includes(key) ? '（必填）' : '（可选）';
+        lines.push(
+          `- ${key}${req}: ${schema.description || schema.type}${schema.enum ? '，可选值: ' + schema.enum.join('/') : ''}`
+        );
+      }
+    }
+    lines.push('');
+  });
+
+  return lines.join('\n');
+}
+
 module.exports = {
   getAiToolsSchema,
   getAiToolDefinitions,
-  getAiToolByName
+  getAiToolByName,
+  buildToolsSystemPrompt
 };

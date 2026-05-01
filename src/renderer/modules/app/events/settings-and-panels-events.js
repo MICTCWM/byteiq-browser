@@ -249,6 +249,10 @@ function bindSettingsAndPanelEvents(options) {
         if (batchTodoToggle) {
           batchTodoToggle.checked = store.get('settings.experimentalBatchTodo', false);
         }
+        const nativeToolCallToggle = document.getElementById('native-tool-call-toggle');
+        if (nativeToolCallToggle) {
+          nativeToolCallToggle.checked = store.get('settings.nativeToolCall', true);
+        }
         // 获取版本信息
         ipcRenderer.invoke('get-version-info').then(versions => {
           const appVersionEl = document.getElementById('about-app-version');

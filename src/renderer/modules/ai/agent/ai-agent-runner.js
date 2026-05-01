@@ -2,7 +2,7 @@
  * AI Agent 模式执行器
  */
 
-const { getAiToolsSchema } = require('../tools/ai-tools-registry');
+const { getAiToolsSchema, buildToolsSystemPrompt } = require('../tools/ai-tools-registry');
 const { renderMarkdownToElement } = require('../chat/ai-markdown-renderer');
 const {
   parseToolCallsFromText,
@@ -40,6 +40,17 @@ function createAiAgentRunner(options) {
 
   let isAgentProcessing = false;
   let agentMessageHistory = [];
+
+  // 将工具提示词注入到 messages 中（合并到已有的 system 消息或新建）
+  function injectToolsPrompt(messages, toolsPrompt) {
+    const result = [...messages];
+    if (result.length > 0 && result[0].role === 'system') {
+      result[0] = { ...result[0], content: result[0].content + '\n\n' + toolsPrompt };
+    } else {
+      result.unshift({ role: 'system', content: toolsPrompt });
+    }
+    return result;
+  }
 
   // 当前 Agent 操作的守卫（用于会话隔离）
   let currentOperationGuard = null;
@@ -107,9 +118,23 @@ function createAiAgentRunner(options) {
         throw new Error('Session no longer active');
       }
 
-      const tools = getAiToolsSchema(store);
+      const nativeToolCall = store.get('settings.nativeToolCall', true);
+      let tools = null;
+      let finalMessages = messages;
+
+      if (nativeToolCall) {
+        // 原生工具调用：工具注入 API 的 tools 参数
+        tools = getAiToolsSchema(store);
+      } else {
+        // 非原生模式：工具转为系统提示词注入 messages
+        const toolsPrompt = buildToolsSystemPrompt(store);
+        if (toolsPrompt) {
+          finalMessages = injectToolsPrompt(messages, toolsPrompt);
+        }
+      }
+
       const result = await ipcRenderer.invoke('ai-agent', {
-        messages,
+        messages: finalMessages,
         tools,
         taskId: agentStreamingTaskId
       });

@@ -217,6 +217,15 @@ function bindBrowserSettingsEvents(deps) {
     });
   }
 
+  // 实验功能：原生工具调用开关
+  const nativeToolCallToggle = document.getElementById('native-tool-call-toggle');
+  if (nativeToolCallToggle) {
+    nativeToolCallToggle.checked = store.get('settings.nativeToolCall', true);
+    nativeToolCallToggle.addEventListener('change', () => {
+      store.set('settings.nativeToolCall', nativeToolCallToggle.checked);
+    });
+  }
+
   // 导出数据
   exportDataBtn.addEventListener('click', () => {
     const data = {
