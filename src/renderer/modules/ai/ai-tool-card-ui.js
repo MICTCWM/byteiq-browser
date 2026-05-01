@@ -78,24 +78,21 @@ function truncateText(text, maxLength) {
 /**
  * 根据工具名和参数构建结构化参数列表
  */
-function buildToolParamRows(toolName, args, toolResult) {
+function buildToolParamRows(toolName, args) {
   const rows = [];
   const a = args || {};
 
   switch (toolName) {
     case 'search_page': {
-      if (a.query) rows.push({ label: '搜索词', value: a.query, icon: 'text' });
+      // 搜索内容已在 description 中显示，不再重复
       break;
     }
     case 'get_page_info': {
-      if (a.tab_id) rows.push({ label: '目标页面', value: a.tab_id, icon: 'page' });
-      else rows.push({ label: '目标页面', value: '当前页面', icon: 'page' });
+      // 页面信息已在 description 中显示，不再重复
       break;
     }
     case 'click_element': {
-      if (a.selector) rows.push({ label: '目标选择器', value: a.selector, icon: 'selector' });
-      if (a.tab_id) rows.push({ label: '目标页面', value: a.tab_id, icon: 'page' });
-      else rows.push({ label: '目标页面', value: '当前页面', icon: 'page' });
+      // 点击目标已在 description 中显示，不再重复
       break;
     }
     case 'input_text': {
@@ -105,62 +102,38 @@ function buildToolParamRows(toolName, args, toolResult) {
       else rows.push({ label: '目标页面', value: '当前页面', icon: 'page' });
       break;
     }
-    case 'add_todo': {
-      if (a.title) rows.push({ label: '待办标题', value: a.title, icon: 'text' });
-      if (a.priority) rows.push({ label: '优先级', value: a.priority, icon: 'tag' });
-      break;
-    }
-    case 'add_todos': {
-      if (Array.isArray(a.items)) {
-        rows.push({ label: '待办数量', value: `${a.items.length} 项`, icon: 'count' });
-      }
-      break;
-    }
-    case 'list_todos': {
-      if (a.filter) rows.push({ label: '筛选', value: a.filter, icon: 'filter' });
-      else rows.push({ label: '筛选', value: 'pending', icon: 'filter' });
-      break;
-    }
-    case 'complete_todo': {
-      if (a.todo_id) rows.push({ label: '待办 ID', value: a.todo_id, icon: 'id' });
-      break;
-    }
-    case 'complete_todos': {
-      if (Array.isArray(a.todo_ids)) {
-        rows.push({ label: '待办 ID', value: a.todo_ids.join(', '), icon: 'id' });
-      }
-      break;
-    }
-    case 'remove_todo': {
-      if (a.todo_id) rows.push({ label: '待办 ID', value: a.todo_id, icon: 'id' });
-      break;
-    }
+    case 'add_todo':
+    case 'add_todos':
+    case 'list_todos':
+    case 'complete_todo':
+    case 'complete_todos':
+    case 'remove_todo':
     case 'end_session': {
-      if (a.summary) rows.push({ label: '总结', value: truncateText(a.summary, 60), icon: 'text' });
+      // 待办系列和结束工具：description 已包含关键信息，不再重复参数行
       break;
     }
     default:
       break;
   }
 
-  // 如果有结果信息，追加结果参数
-  if (toolResult) {
-    if (toolResult.title && toolName === 'get_page_info') {
-      rows.push({ label: '页面标题', value: toolResult.title, icon: 'page' });
-    }
-    if (toolResult.url && (toolName === 'search_page' || toolName === 'get_page_info')) {
-      rows.push({ label: '页面 URL', value: truncateText(toolResult.url, 50), icon: 'link' });
-    }
-    if (toolResult.tabId) {
-      rows.push({ label: '标签页 ID', value: toolResult.tabId, icon: 'page' });
-    }
-    if (toolResult.tagName && toolName === 'click_element') {
-      rows.push({ label: '元素标签', value: toolResult.tagName.toLowerCase(), icon: 'tag' });
-    }
-  }
+  // 结果信息已在 description 中显示，不再追加参数行
 
   return rows;
 }
+
+// 需要描述文字8字截断+hover完整提示的工具
+const TRUNCATE_DESC_TOOLS = new Set([
+  'search_page',
+  'get_page_info',
+  'click_element',
+  'add_todo',
+  'add_todos',
+  'list_todos',
+  'complete_todo',
+  'complete_todos',
+  'remove_todo'
+]);
+const DESC_TRUNCATE_LEN = 8;
 
 function createToolCardUI(options) {
   const { documentRef, getPageList, store } = options;
@@ -177,22 +150,192 @@ function createToolCardUI(options) {
       return;
     }
 
-    const { title, description, status, toolName = '', args, toolResult } = cardOptions;
+    const { title, description, status, toolName = '', args } = cardOptions;
     target.classList.remove('streaming', 'ai');
     target.textContent = '';
 
     const style = getCardStyle();
     const color = getToolColor(toolName);
     const displayTitle = title || getToolTitle(toolName);
-    const paramRows = buildToolParamRows(toolName, args, toolResult);
+    const paramRows = buildToolParamRows(toolName, args);
 
-    if (style === 'text') {
+    // 待办系列工具使用向下展开的垂直布局
+    if (isTodoTool(toolName)) {
+      renderTodoStyle(target, displayTitle, description, status, toolName, color);
+    } else if (style === 'text') {
       renderTextStyle(target, displayTitle, description, status, toolName, color, paramRows);
     } else if (style === 'badge') {
       renderBadgeStyle(target, displayTitle, description, status, toolName, color, paramRows);
     } else {
       renderInlineStyle(target, displayTitle, description, status, toolName, color, paramRows);
     }
+  }
+
+  // 判断是否为待办工具
+  function isTodoTool(toolName) {
+    return [
+      'add_todo',
+      'add_todos',
+      'list_todos',
+      'complete_todo',
+      'complete_todos',
+      'remove_todo'
+    ].includes(toolName);
+  }
+
+  // 创建带截断+tooltip的描述元素
+  function createDescElement(text, toolName) {
+    const el = documentRef.createElement('span');
+    if (TRUNCATE_DESC_TOOLS.has(toolName) && text && text.length > DESC_TRUNCATE_LEN) {
+      el.textContent = truncateText(text, DESC_TRUNCATE_LEN);
+      el.title = text;
+    } else {
+      el.textContent = text;
+    }
+    return el;
+  }
+
+  // 创建待办项图标：未完成虚线圆带序号，完成打勾，未开始红叉
+  function createTodoIcon(num, isCompleted, isFailed) {
+    const size = 14;
+    const fillColor = isFailed
+      ? 'rgba(239, 68, 68, 0.1)'
+      : isCompleted
+        ? 'rgba(34, 197, 94, 0.1)'
+        : 'transparent';
+
+    if (isCompleted) {
+      // 完成：绿色实心圆带打勾
+      return `<svg width="${size}" height="${size}" viewBox="0 0 20 20">
+        <circle cx="10" cy="10" r="9" fill="${fillColor}" stroke="#22c55e" stroke-width="2"/>
+        <path d="M6 10l3 3 5-5" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`;
+    }
+    if (isFailed) {
+      // 失败/未开始：红色实心圆带叉
+      return `<svg width="${size}" height="${size}" viewBox="0 0 20 20">
+        <circle cx="10" cy="10" r="9" fill="${fillColor}" stroke="#ef4444" stroke-width="2"/>
+        <path d="M7 7l6 6M13 7l-6 6" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
+      </svg>`;
+    }
+    // 未完成：虚线圆带序号
+    return `<svg width="${size}" height="${size}" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="9" fill="transparent" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <text x="10" y="14" text-anchor="middle" font-size="10" fill="#6b7280" font-family="system-ui, -apple-system, sans-serif">${num}</text>
+    </svg>`;
+  }
+
+  // 解析待办列表文本，提取结构化的待办项
+  function parseTodoList(text) {
+    if (!text) return [];
+    const lines = text.split('\n').filter(l => l.trim());
+    return lines.map(line => {
+      // 匹配格式: "1. [x] (high) 标题" 或 "1. [ ] (medium) 标题"
+      const match = line.match(/^(\d+)\.\s*\[([x\s])\]\s*(?:\(([^)]+)\))?\s*(.+)$/);
+      if (match) {
+        return {
+          num: match[1],
+          completed: match[2] === 'x',
+          priority: match[3] || '',
+          title: match[4]
+        };
+      }
+      return { raw: line };
+    });
+  }
+
+  // 待办工具垂直布局：图标+标题在上，详情列表向下展开
+  function renderTodoStyle(target, title, description, status, toolName, color) {
+    target.classList.add('tool-card', 'tool-card-style-todo');
+
+    // 头部行：图标 + 标题 + 状态
+    const header = documentRef.createElement('div');
+    header.className = 'tc-todo-header';
+
+    if (status) {
+      const statusEl = documentRef.createElement('span');
+      statusEl.className = `tc-todo-status-icon ${status}`;
+      statusEl.innerHTML = getStatusIcon(status);
+      header.appendChild(statusEl);
+    }
+
+    const icon = documentRef.createElement('span');
+    icon.className = 'tc-todo-icon';
+    icon.style.color = color;
+    icon.innerHTML = getToolIcon(toolName) || '';
+    header.appendChild(icon);
+
+    const titleEl = documentRef.createElement('span');
+    titleEl.className = 'tc-todo-title';
+    titleEl.textContent = title;
+    header.appendChild(titleEl);
+
+    target.appendChild(header);
+
+    // 详情区域：向下展开显示完整描述/列表
+    const detail = documentRef.createElement('div');
+    detail.className = 'tc-todo-detail';
+
+    // 提取简短状态描述（去掉后面的列表部分）
+    const fullDesc = description || '';
+    const lines = fullDesc.split('\n');
+    const shortDesc = lines[0] || '';
+    const listContent = lines.slice(1).join('\n');
+
+    // 简短描述
+    const descEl = documentRef.createElement('div');
+    descEl.className = 'tc-todo-short-desc';
+    descEl.textContent = shortDesc;
+    detail.appendChild(descEl);
+
+    // 如果有待办列表，使用美化渲染
+    if (listContent) {
+      const listContainer = documentRef.createElement('div');
+      listContainer.className = 'tc-todo-list-container';
+
+      const items = parseTodoList(listContent);
+      items.forEach(item => {
+        const itemEl = documentRef.createElement('div');
+        itemEl.className = 'tc-todo-item';
+
+        if (item.raw) {
+          // 解析失败，直接显示文本
+          itemEl.textContent = item.raw;
+        } else {
+          // 图标
+          const iconEl = documentRef.createElement('span');
+          iconEl.className = 'tc-todo-item-icon';
+          iconEl.innerHTML = createTodoIcon(item.num, item.completed, false);
+          itemEl.appendChild(iconEl);
+
+          // 内容区域
+          const contentEl = documentRef.createElement('div');
+          contentEl.className = 'tc-todo-item-content';
+
+          // 优先级标签
+          if (item.priority) {
+            const priEl = documentRef.createElement('span');
+            priEl.className = `tc-todo-priority tc-todo-priority-${item.priority}`;
+            priEl.textContent = item.priority;
+            contentEl.appendChild(priEl);
+          }
+
+          // 标题
+          const titleSpan = documentRef.createElement('span');
+          titleSpan.className = 'tc-todo-item-title';
+          titleSpan.textContent = item.title;
+          contentEl.appendChild(titleSpan);
+
+          itemEl.appendChild(contentEl);
+        }
+
+        listContainer.appendChild(itemEl);
+      });
+
+      detail.appendChild(listContainer);
+    }
+
+    target.appendChild(detail);
   }
 
   // V2 极简行内：图标 + 标题 + 分隔符 + 描述 + 状态
@@ -225,9 +368,9 @@ function createToolCardUI(options) {
     sep.textContent = '·';
     main.appendChild(sep);
 
-    const descEl = documentRef.createElement('span');
+    const descText = description || buildParamSummary(paramRows);
+    const descEl = createDescElement(descText, toolName);
     descEl.className = 'tc-inline-desc';
-    descEl.textContent = description || buildParamSummary(paramRows);
     main.appendChild(descEl);
 
     target.appendChild(main);
@@ -252,7 +395,9 @@ function createToolCardUI(options) {
 
     const detail = description || buildParamSummary(paramRows);
     if (detail) {
-      textWrap.appendChild(documentRef.createTextNode(` — ${detail}`));
+      textWrap.appendChild(documentRef.createTextNode(' — '));
+      const descEl = createDescElement(detail, toolName);
+      textWrap.appendChild(descEl);
     }
 
     target.appendChild(textWrap);
@@ -277,9 +422,9 @@ function createToolCardUI(options) {
     badge.innerHTML = `${getToolIcon(toolName) || ''} <span>${title}</span>`;
     target.appendChild(badge);
 
-    const descEl = documentRef.createElement('span');
+    const descText = description || buildParamSummary(paramRows);
+    const descEl = createDescElement(descText, toolName);
     descEl.className = 'tc-badge-desc';
-    descEl.textContent = description || buildParamSummary(paramRows);
     target.appendChild(descEl);
   }
 
@@ -381,16 +526,18 @@ function createToolCardUI(options) {
     const args = toolCall.arguments || {};
     switch (toolCall.name) {
       case 'search_page': {
-        const query = args.query ? truncateText(args.query, 40) : '未提供搜索词';
-        return query;
+        return args.query || '未提供搜索词';
       }
-      case 'get_page_info':
-        return buildPageHintFromArgs(args);
+      case 'get_page_info': {
+        const pageHint = buildPageHintFromArgs(args);
+        return pageHint === '当前页面' ? '当前页面' : pageHint.replace(/^页面:\s*/, '');
+      }
       case 'click_element': {
         const selector = args.selector || '';
         const pageHint = buildPageHintFromArgs(args);
-        const parts = [selector, pageHint].filter(Boolean);
-        return parts.join('，') || '准备点击';
+        const pageDisplay = pageHint === '当前页面' ? '' : pageHint.replace(/^页面:\s*/, '');
+        const parts = [selector, pageDisplay].filter(Boolean);
+        return parts.join(' · ') || '准备点击';
       }
       case 'input_text': {
         const selector = args.selector || '';
@@ -432,14 +579,14 @@ function createToolCardUI(options) {
   function buildToolResultSummary(toolCall, toolResult) {
     const toolName = toolCall ? toolCall.name : '';
     if (toolName === 'search_page') {
-      const pageHint = buildPageHintFromResult(toolResult, toolCall);
       const failed = toolResult && toolResult.success === false;
       if (failed) {
         return { status: 'error', text: toolResult.error || '搜索页面打开失败' };
       }
       const title = toolResult?.title || '';
       const tabId = toolResult?.tabId || '';
-      const hint = title || pageHint || (tabId ? `tab_id: ${tabId}` : '');
+      // 去掉"页面:"前缀，直接显示页面标题
+      const hint = title || (tabId ? `tab_id: ${tabId}` : '');
       return {
         status: 'success',
         text: hint || '已打开',
@@ -451,9 +598,11 @@ function createToolCardUI(options) {
       const pageHint = buildPageHintFromResult(toolResult, toolCall);
       const failed = toolResult && toolResult.success === false;
       const errorText = toolResult && toolResult.error ? toolResult.error : '获取失败';
+      // 去掉"页面:"前缀
+      const display = failed ? errorText : pageHint.replace(/^页面:\s*/, '') || '已获取';
       return {
         status: failed ? 'error' : 'success',
-        text: failed ? errorText : pageHint || '已获取'
+        text: display
       };
     }
 
@@ -465,13 +614,14 @@ function createToolCardUI(options) {
     }
 
     if (toolName === 'click_element') {
-      const tagName =
-        toolResult && toolResult.tagName ? `目标: ${toolResult.tagName.toLowerCase()}` : '';
+      // 去掉"目标:"前缀，直接跟标签名；去掉"页面:"前缀
+      const tagName = toolResult && toolResult.tagName ? toolResult.tagName.toLowerCase() : '';
       const role = toolResult && toolResult.role ? `role=${toolResult.role}` : '';
       const type = toolResult && toolResult.type ? `type=${toolResult.type}` : '';
       const pageHint = buildPageHintFromResult(toolResult, toolCall);
+      const pageDisplay = pageHint.replace(/^页面:\s*/, '');
       const cancelled = toolResult && toolResult.cancelled ? '事件被取消' : '';
-      const details = [tagName, role, type, cancelled, pageHint].filter(Boolean).join('，');
+      const details = [tagName, role, type, cancelled, pageDisplay].filter(Boolean).join('，');
       return {
         status: 'success',
         text: details || '已完成'
@@ -486,6 +636,7 @@ function createToolCardUI(options) {
       };
     }
 
+    // 待办系列工具：向下显示待办列表
     if (toolName === 'add_todo') {
       const listText = toolResult.currentList ? `\n${toolResult.currentList}` : '';
       return {

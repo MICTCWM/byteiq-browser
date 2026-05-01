@@ -85,14 +85,17 @@ function createAiMessageUI(options) {
       const paddingBottom = parseFloat(computed.paddingBottom) || 0;
       padding = paddingTop + paddingBottom;
     }
+    // 如果获取不到 padding（例如元素尚未完全渲染或处于隐藏状态），手动补偿 16px (6px top + 10px bottom)
+    if (padding === 0) padding = 16;
     return Math.round(lineHeight * THINK_MAX_LINES + padding);
   }
 
   function getThinkMaxHeight(content, lockToMax) {
     const limit = getThinkMaxHeightLimit(content);
     if (lockToMax || !content) return limit;
-    const height = content.scrollHeight || 0;
-    if (!height) return limit;
+    // 增加 8px 的 buffer 以确保 padding 和 line-height 导致的微小溢出不会截断内容
+    const height = (content.scrollHeight || 0) + 8;
+    if (!height || height < 20) return limit;
     return Math.min(height, limit);
   }
 
@@ -176,7 +179,7 @@ function createAiMessageUI(options) {
     const duration = clamp(Math.round(height * 0.4), 180, 320);
     content.style.setProperty('--think-duration', `${duration}ms`);
     content.style.maxHeight = `${height}px`;
-    content.style.padding = '4px 0 4px 16px';
+    content.style.padding = '6px 0 10px 16px';
     content.classList.add('show');
   }
 

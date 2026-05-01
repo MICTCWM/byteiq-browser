@@ -121,7 +121,7 @@ function createAiTodoManager(options) {
         const mark = t.completed ? '[x]' : '[ ]';
         const pri = t.priority ? `(${t.priority})` : '';
         const num = idx + 1;
-        return `${num}. ${mark} ${pri} ${t.title}  (id: ${t.id})`;
+        return `${num}. ${mark} ${pri} ${t.title}`;
       })
       .join('\n');
 
