@@ -255,7 +255,7 @@ function registerAiIpc(options) {
       return {
         success: true,
         type: 'message',
-        content: message?.content || result,
+        content: message?.content ?? result,
         reasoningContent,
         usedToolsFallback,
         taskId: resolvedTaskId
