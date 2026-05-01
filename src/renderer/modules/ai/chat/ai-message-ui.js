@@ -307,6 +307,20 @@ function createAiMessageUI(options) {
     }
 
     aiChatArea.appendChild(msg);
+
+    // DOM 消息数量限制：超过阈值时移除最早的非流式消息，防止内存溢出
+    const maxDomMessages = 80;
+    const allMessages = aiChatArea.querySelectorAll('.chat-message');
+    if (allMessages.length > maxDomMessages) {
+      const removeCount = allMessages.length - maxDomMessages;
+      for (let i = 0; i < removeCount; i++) {
+        const oldest = allMessages[i];
+        // 不移除正在流式输出的消息
+        if (oldest.classList.contains('streaming')) continue;
+        if (oldest.parentNode) oldest.parentNode.removeChild(oldest);
+      }
+    }
+
     scrollToBottom();
 
     return msg;

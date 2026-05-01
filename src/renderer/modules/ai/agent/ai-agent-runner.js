@@ -41,6 +41,73 @@ function createAiAgentRunner(options) {
   let isAgentProcessing = false;
   let agentMessageHistory = [];
 
+  // 工具结果内容截断阈值（字符数），超过此长度的内容只保留摘要
+  const TOOL_RESULT_MAX_CHARS = 3000;
+
+  // 需要截断的工具名集合（返回大量页面内容的工具）
+  const LARGE_RESULT_TOOLS = new Set(['get_page_info', 'search_page']);
+
+  /**
+   * 截断工具结果内容，防止内存膨胀和 IPC 传输过大
+   * 对于 get_page_info/search_page 等大结果工具，只保留摘要信息
+   * @param {string} toolName - 工具名
+   * @param {*} toolResult - 工具执行结果
+   * @returns {{ content: string, summary: string }} 截断后的内容和摘要
+   */
+  function truncateToolResult(toolName, toolResult) {
+    const fullContent = JSON.stringify(toolResult);
+
+    // 非大结果工具：仅做长度截断
+    if (!LARGE_RESULT_TOOLS.has(toolName)) {
+      if (fullContent.length <= TOOL_RESULT_MAX_CHARS) {
+        return { content: fullContent, summary: fullContent };
+      }
+      return {
+        content: fullContent.substring(0, TOOL_RESULT_MAX_CHARS) + '...[truncated]',
+        summary: fullContent.substring(0, TOOL_RESULT_MAX_CHARS) + '...[truncated]'
+      };
+    }
+
+    // 大结果工具：提取摘要字段，丢弃页面正文和控件列表
+    const summary = {
+      success: toolResult?.success,
+      error: toolResult?.error || '',
+      tabId: toolResult?.tabId || '',
+      url: toolResult?.url || '',
+      title: toolResult?.title || '',
+      message: toolResult?.message || ''
+    };
+
+    // 如果有 meta 信息，保留简短版本
+    if (toolResult?.meta) {
+      summary.meta = {
+        description: (toolResult.meta.description || '').substring(0, 200),
+        keywords: (toolResult.meta.keywords || '').substring(0, 100)
+      };
+    }
+
+    // 如果有 content，只保留前 500 字符
+    if (toolResult?.content && typeof toolResult.content === 'string') {
+      summary.contentPreview = toolResult.content.substring(0, 500);
+      if (toolResult.content.length > 500) {
+        summary.contentPreview += '...[truncated]';
+      }
+      summary.contentLength = toolResult.content.length;
+    }
+
+    // 如果有 controls，只保留数量统计
+    if (toolResult?.controls) {
+      summary.controlsCount = {
+        buttons: toolResult.controls.buttons?.length || 0,
+        inputs: toolResult.controls.inputs?.length || 0,
+        links: toolResult.controls.links?.length || 0
+      };
+    }
+
+    const summaryStr = JSON.stringify(summary);
+    return { content: summaryStr, summary: summaryStr };
+  }
+
   // 将工具提示词注入到 messages 中（合并到已有的 system 消息或新建）
   function injectToolsPrompt(messages, toolsPrompt) {
     const result = [...messages];
@@ -442,9 +509,10 @@ function createAiAgentRunner(options) {
                 summaryMsg.appendChild(contentDiv);
               }
               if (contextIsolation?.isSessionActive?.(session.id)) {
+                const endTruncated = truncateToolResult(toolCall.name, toolResult);
                 await historyStorage.addMessage(session.id, {
                   role: 'tool',
-                  content: JSON.stringify(toolResult),
+                  content: endTruncated.summary,
                   metadata: {
                     toolCallId: toolCall.id,
                     toolName: toolCall.name,
@@ -457,10 +525,11 @@ function createAiAgentRunner(options) {
               break;
             }
 
+            const truncated = truncateToolResult(toolCall.name, toolResult);
             agentMessageHistory.push({
               role: 'tool',
               tool_call_id: toolCall.id,
-              content: JSON.stringify(toolResult)
+              content: truncated.content
             });
 
             const summary = toolCardUI.buildToolResultSummary(toolCall, toolResult);
@@ -489,11 +558,11 @@ function createAiAgentRunner(options) {
                 lastAction: summary.text
               });
             }
-            // 保存工具结果到历史
+            // 保存工具结果到历史（使用截断后的内容防止存储膨胀）
             if (contextIsolation?.isSessionActive?.(session.id)) {
               await historyStorage.addMessage(session.id, {
                 role: 'tool',
-                content: JSON.stringify(toolResult),
+                content: truncated.summary,
                 metadata: {
                   toolCallId: toolCall.id,
                   toolName: toolCall.name,
