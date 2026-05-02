@@ -183,7 +183,7 @@ function createAiManager(options) {
       toolbar.closeAllMenus();
     }
     if (currentMode === 'agent') {
-      contextBar.style.display = 'none';
+      if (contextBar) contextBar.style.display = 'none';
       return;
     }
     (async () => {
@@ -388,7 +388,7 @@ function createAiManager(options) {
     updateContextBar(session?.pageContext);
     contextMenu.updateContextPie();
     if (currentMode === 'agent') {
-      contextBar.style.display = 'none';
+      if (contextBar) contextBar.style.display = 'none';
     }
     const tabId = getActiveTabId();
     const webview = tabId ? documentRef.getElementById(`webview-${tabId}`) : null;
@@ -439,9 +439,10 @@ function createAiManager(options) {
   const { bindHistoryPanelEvents } = historyUI;
 
   function updateContextBar(pageContext) {
+    if (!contextBar) return;
     if (pageContext && pageContext.content) {
       const title = pageContext.title || pageContext.url;
-      contextText.textContent = `${t('ai.contextLoaded') || '已加载'}: ${title}`;
+      if (contextText) contextText.textContent = `${t('ai.contextLoaded') || '已加载'}: ${title}`;
       contextBar.style.display = 'flex';
     } else {
       contextBar.style.display = 'none';
@@ -454,7 +455,7 @@ function createAiManager(options) {
     await updateSession(session.id, { pageContext: null });
     await historyStorage.clearMessages(session.id);
     agentRunner.setMessageHistory([]);
-    contextBar.style.display = 'none';
+    if (contextBar) contextBar.style.display = 'none';
     clearChatArea();
     await renderSessionsList();
   }
