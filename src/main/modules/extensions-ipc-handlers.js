@@ -37,7 +37,6 @@
         manifestVersion: uiInfo.manifestVersion
       };
     });
-    saveStoredExtensions(enriched);
     return {
       ok: true,
       extensions: enriched
