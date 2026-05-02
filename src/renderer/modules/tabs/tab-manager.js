@@ -209,7 +209,10 @@ function createTabManager(options) {
     const targetUrl = url || startupUrl || null;
     const formattedUrl = targetUrl ? formatUrl(targetUrl) : null;
 
-    const id = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+    let id;
+    do {
+      id = `${Date.now()}-${Math.random().toString(16).slice(2, 14)}`;
+    } while (getTabById(id));
     const tab = {
       id,
       url: formattedUrl,
