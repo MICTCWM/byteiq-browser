@@ -334,6 +334,10 @@ function createTabManager(options) {
     if (index === -1) return;
 
     const tabData = tabs[index];
+    if (tabData.pinned) {
+      showToast(t('toast.pinnedTabCannotClose') || '已固定的标签页不能关闭', 'warning');
+      return;
+    }
     const wv = documentRef.getElementById(`webview-${id}`);
     if (wv && wv.tagName === 'WEBVIEW') {
       lastClosedTabs.push({ url: wv.getURL(), title: tabData.title });
