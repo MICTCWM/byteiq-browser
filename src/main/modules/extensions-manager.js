@@ -35,6 +35,12 @@ function createExtensionsManager(options) {
     return extensionLogsByPath.get(resolvedPath) || [];
   }
 
+  function clearExtensionLogs(extPath) {
+    if (!extPath) return;
+    const resolvedPath = normalizeExtensionPath(extPath);
+    extensionLogsByPath.delete(resolvedPath);
+  }
+
   function getStoredExtensions() {
     const list = store.get(EXTENSIONS_KEY, []);
     return Array.isArray(list) ? list : [];
@@ -267,6 +273,7 @@ function createExtensionsManager(options) {
     findExtensionIndexByPath,
     getExtensionById,
     getExtensionLogs,
+    clearExtensionLogs,
     getExtensionPageUrl,
     getLoadedExtensionByPath,
     getStoredExtensions,

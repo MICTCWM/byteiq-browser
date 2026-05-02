@@ -2,6 +2,7 @@
   const {
     BrowserWindow,
     appendExtensionLog,
+    clearExtensionLogs,
     buildExtensionDetails,
     dialog,
     extractExtensionIdFromSource,
@@ -397,6 +398,7 @@
 
     list.splice(index, 1);
     saveStoredExtensions(list);
+    clearExtensionLogs(resolvedPath);
     appendExtensionLog(resolvedPath, 'info', 'Extension removed');
     return { ok: true, extensions: list };
   });
