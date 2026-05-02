@@ -79,6 +79,10 @@ function createBrowserManager(options) {
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
+    // localhost 或 IP 地址（如 127.0.0.1、192.168.1.1:8080）应作为 URL 而非搜索
+    if (/^localhost/.test(url) || /^\d{1,3}(\.\d{1,3}){2,3}/.test(url)) {
+      return 'http://' + url;
+    }
     if (url.includes('.') && !url.includes(' ')) {
       return 'https://' + url;
     }
