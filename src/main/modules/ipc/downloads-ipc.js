@@ -58,6 +58,15 @@ function createDownloadsManager(options) {
       const mainWindow = getMainWindow();
       if (!url || !mainWindow) return;
       try {
+        const parsedUrl = new URL(url);
+        if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+          console.warn(
+            '[downloads-ipc] Blocked retry with unsafe protocol:',
+            parsedUrl.protocol,
+            url
+          );
+          return;
+        }
         mainWindow.webContents.downloadURL(url);
       } catch (error) {
         console.error('Failed to retry download:', error);
