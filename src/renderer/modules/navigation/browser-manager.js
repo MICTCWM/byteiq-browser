@@ -137,7 +137,9 @@ function createBrowserManager(options) {
     if (modalManager) {
       modalManager.alert(
         nextIncognito ? t('panels.settings.incognitoOn') : t('panels.settings.incognitoOff'),
-        nextIncognito ? '隐身模式已开启' : '隐身模式已关闭'
+        nextIncognito
+          ? t('panels.settings.incognitoOnTitle')
+          : t('panels.settings.incognitoOffTitle')
       );
     }
   }
