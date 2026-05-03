@@ -47,7 +47,7 @@ function createToolCardUI(options) {
     }
 
     const { title, description, status, toolName = '', args } = cardOptions;
-    target.classList.remove('streaming', 'ai');
+    target.classList.remove('streaming');
     target.textContent = '';
 
     const style = getCardStyle();
