@@ -38,8 +38,8 @@ function createTodoStorage(options) {
       console.log('[ai-todo-storage] Session unlocked, was:', lockedSessionId);
     }
     lockedSessionId = null;
-    inMemoryCache = null;
-    inMemoryCacheKey = null;
+    // 不清空缓存：保留当前session的todo数据，避免tab切换后getActiveSessionId变化导致读取错误key
+    // 缓存会在下次lockSession(不同sessionId)或writeTodos时自然失效
   }
 
   function getSessionKey() {
