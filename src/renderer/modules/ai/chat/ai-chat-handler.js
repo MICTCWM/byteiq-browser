@@ -65,8 +65,12 @@ function createAiChatHandler(deps) {
       if (data.taskId !== currentTaskId) return;
 
       // 组合思考内容和正文内容用于显示
+      // 只在有正文内容时才添加endthink标签，思考进行中不添加
+      // 让StreamingThinkParser正确识别isThinking状态以自动展开思考下拉框
       const fullText = data.reasoningContent
-        ? `<!--think-->${data.reasoningContent}<!--endthink-->${data.accumulated}`
+        ? data.accumulated
+          ? `<!--think-->${data.reasoningContent}<!--endthink-->${data.accumulated}`
+          : `<!--think-->${data.reasoningContent}`
         : data.accumulated;
 
       // 使用批处理来减少 DOM 操作频率

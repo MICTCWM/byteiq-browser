@@ -154,8 +154,12 @@ function createAiAgentRunner(options) {
       if (!agentStreamingElement) return;
       if (data.taskId !== agentStreamingTaskId) return;
 
+      // 只在有正文内容时才添加endthink标签，思考进行中不添加
+      // 让StreamingThinkParser正确识别isThinking状态以自动展开思考下拉框
       const fullText = data.reasoningContent
-        ? `<!--think-->${data.reasoningContent}<!--endthink-->${data.accumulated}`
+        ? data.accumulated
+          ? `<!--think-->${data.reasoningContent}<!--endthink-->${data.accumulated}`
+          : `<!--think-->${data.reasoningContent}`
         : data.accumulated;
 
       // 批处理 DOM 更新以减少重排
