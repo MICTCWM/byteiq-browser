@@ -273,10 +273,17 @@ function createAiAgentRunner(options) {
     // 增强系统提示词：注入已访问网站清单
     const enhancedSystemPrompt = promptBuilder.enhanceSystemPromptWithPages(systemPrompt);
 
+    // 在用户消息后追加本轮对话的todo内容
+    const todoBrief =
+      todoManager && typeof todoManager.buildTodoPrompt === 'function'
+        ? todoManager.buildTodoPrompt()
+        : '';
+    const userContent = todoBrief ? `${userText}\n\n---\n本轮对话待办内容：${todoBrief}` : userText;
+
     agentMessageHistory = [
       { role: 'system', content: enhancedSystemPrompt },
       ...truncatedHistory,
-      { role: 'user', content: userText }
+      { role: 'user', content: userContent }
     ];
 
     let maxIterations = 30;
