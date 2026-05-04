@@ -26,7 +26,19 @@ jobs:
       - name: Push to Gitee
         run: |
           git remote add gitee https://${{ secrets.GITEE_USERNAME }}:${{ secrets.GITEE_TOKEN }}@gitee.com/${{ secrets.GITEE_USERNAME }}/${{ secrets.GITEE_REPO }}.git
-          git push gitee main --force
+          git fetch gitee main
+
+          # 检查 Gitee 是否有本地没有的提交
+          NEW_COMMITS=$(git log HEAD..gitee/main --oneline 2>/dev/null || true)
+          if [ -n "$NEW_COMMITS" ]; then
+            echo "⚠️ Gitee 有未同步的提交，先 merge 再推送："
+            echo "$NEW_COMMITS"
+            git merge gitee/main --no-edit --allow-unrelated-histories
+            # merge 后也要推回 GitHub
+            git push origin main
+          fi
+
+          git push gitee main
 
   # Gitee → GitHub 同步
   sync-from-gitee:
