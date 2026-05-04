@@ -1,10 +1,21 @@
-name: Sync to Gitee
+name: Bidirectional Sync
 on:
   push:
     branches: [ main, master ]
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [ gitee-push ]
+
+permissions:
+  contents: write
+  issues: write
 
 jobs:
-  mirror:
+  # GitHub → Gitee 同步
+  mirror-to-gitee:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,3 +27,73 @@ jobs:
         run: |
           git remote add gitee https://${{ secrets.GITEE_USERNAME }}:${{ secrets.GITEE_TOKEN }}@gitee.com/${{ secrets.GITEE_USERNAME }}/${{ secrets.GITEE_REPO }}.git
           git push gitee main --force
+
+  # Gitee → GitHub 同步
+  sync-from-gitee:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Pull from Gitee and merge
+        id: sync
+        run: |
+          git remote add gitee https://${{ secrets.GITEE_USERNAME }}:${{ secrets.GITEE_TOKEN }}@gitee.com/${{ secrets.GITEE_USERNAME }}/${{ secrets.GITEE_REPO }}.git
+          git fetch gitee main
+
+          # 检查 Gitee 是否有新提交
+          NEW_COMMITS=$(git log HEAD..gitee/main --oneline 2>/dev/null || true)
+          if [ -z "$NEW_COMMITS" ]; then
+            echo "Gitee 没有新提交，跳过同步"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Gitee 新提交："
+          echo "$NEW_COMMITS"
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+
+          # 尝试 merge（--no-edit 使用默认提交信息）
+          git merge gitee/main --no-edit --allow-unrelated-histories
+
+      - name: Push to GitHub
+        if: steps.sync.outputs.has_changes == 'true'
+        run: |
+          git push origin main
+
+      - name: Handle merge conflict
+        if: failure() && steps.sync.outputs.has_changes == 'true'
+        run: |
+          git merge --abort
+          echo "⚠️ Merge 冲突，已中止同步，请手动解决"
+
+      - name: Create conflict issue
+        if: failure() && steps.sync.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '⚠️ Gitee → GitHub 同步冲突';
+            const body = 'Gitee 到 GitHub 的自动同步因合并冲突而失败，请手动解决。\n\n' +
+              '触发时间：' + new Date().toISOString() + '\n\n' +
+              '解决步骤：\n' +
+              '1. 本地拉取 GitHub 和 Gitee 的最新代码\n' +
+              '2. 手动合并解决冲突\n' +
+              '3. 分别推送到 GitHub 和 Gitee';
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'sync-conflict'
+            });
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['sync-conflict']
+              });
+            }
