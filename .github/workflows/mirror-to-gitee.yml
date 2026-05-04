@@ -17,10 +17,9 @@ jobs:
       - name: Mirror to Gitee
         uses: Yikun/hub-mirror-action@master
         with:
-          src: github
-          dst: gitee
-          dst_gitee_user: ${{ secrets.GITEE_USERNAME }}
-          dst_gitee_repo: ${{ secrets.GITEE_REPO }}
-          dst_key: ${{ secrets.GITEE_SSH_PRIVATE_KEY }}
+          src: github/${{ github.repository_owner }}
+          dst: gitee/${{ secrets.GITEE_USERNAME }}
           dst_token: ${{ secrets.GITEE_TOKEN }}
-          static_branch: true
+          static_list: ${{ secrets.GITEE_REPO }}
+          clone_style: https
+          force_update: true
