@@ -7,18 +7,8 @@
 const { webToolDefs } = require('./ai-tools-defs-web');
 const { todoAndSessionDefs } = require('./ai-tools-defs-todo');
 
-// 实验性工具名列表：需要通过设置开关启用
-const EXPERIMENTAL_TOOLS = new Set(['add_todos', 'complete_todos']);
-
-function getAiToolDefinitions(store) {
-  const batchTodoEnabled = store ? store.get('settings.experimentalBatchTodo', false) : false;
-  const allDefs = [...webToolDefs, ...todoAndSessionDefs];
-
-  // 根据设置过滤实验性工具
-  if (!batchTodoEnabled) {
-    return allDefs.filter(def => !EXPERIMENTAL_TOOLS.has(def.name));
-  }
-  return allDefs;
+function getAiToolDefinitions(_store) {
+  return [...webToolDefs, ...todoAndSessionDefs];
 }
 
 // OpenAI Tool API 支持的标准 JSON Schema 属性

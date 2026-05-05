@@ -132,15 +132,7 @@
         "ai": "AI",
         "translation": "翻译",
         "extensions": "扩展",
-        "experimental": "实验功能",
         "about": "关于"
-      },
-      "experimental": {
-        "title": "实验功能",
-        "batchTodo": "批量待办操作",
-        "batchTodoDesc": "启用AI工具中的批量添加(add_todos)和批量完成(complete_todos)功能",
-        "nativeToolCall": "原生工具调用",
-        "nativeToolCallDesc": "开启时工具注入API的tools参数；关闭时工具转为系统提示词注入，适用于不支持原生工具调用的模型"
       },
       "ai": {
         "title": "AI设置",
