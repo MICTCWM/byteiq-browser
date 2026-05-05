@@ -111,6 +111,8 @@ function createAiManager(options) {
     switchTab: tabManager ? tabManager.switchTab : null,
     bindTabToSession: sessionService.bindTabToSession,
     getTodoManager: () => todoManager,
+    closeTab: tabManager ? tabManager.closeTab : null,
+    getTabById: tabManager ? tabManager.getTabById : null,
     store
   });
 

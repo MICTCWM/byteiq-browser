@@ -166,6 +166,40 @@ const webToolDefs = [
         message: `已打开搜索页面，请使用 get_page_info(tab_id="${tabId}") 获取内容。`
       };
     }
+  },
+  {
+    name: 'close_tab',
+    description:
+      '关闭指定标签页。不传tab_id则关闭当前活跃标签页。关闭后浏览器自动切换到相邻标签页。已固定的标签页无法关闭。',
+    parameters: {
+      type: 'object',
+      properties: {
+        tab_id: {
+          type: 'string',
+          description: '要关闭的标签页ID，可选，默认当前活跃标签页'
+        }
+      }
+    },
+    async execute(context, args) {
+      const tabId = args?.tab_id || context.getActiveTabId?.() || '';
+      if (!tabId) {
+        return { success: false, error: 'No tab to close' };
+      }
+      // 检查标签页是否固定
+      const tab = typeof context.getTabById === 'function' ? context.getTabById(tabId) : null;
+      if (tab && tab.pinned) {
+        return { success: false, error: '已固定的标签页不能关闭' };
+      }
+      if (typeof context.closeTab !== 'function') {
+        return { success: false, error: 'Cannot close tab' };
+      }
+      context.closeTab(tabId);
+      return {
+        success: true,
+        tabId,
+        message: '已关闭标签页'
+      };
+    }
   }
 ];
 

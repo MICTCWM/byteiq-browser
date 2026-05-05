@@ -91,6 +91,10 @@ function createDescBuilder(deps) {
       case 'remove_todo': {
         return args.todo_id || '';
       }
+      case 'close_tab': {
+        // 仅显示工具标题，不展示参数
+        return '';
+      }
       case 'end_session':
         return '结束会话';
       default:
@@ -192,6 +196,14 @@ function createDescBuilder(deps) {
         status: 'success',
         text: `${toolResult.message || '已删除'}${listText}`
       };
+    }
+
+    if (toolName === 'close_tab') {
+      const failed = toolResult && toolResult.success === false;
+      if (failed) {
+        return { status: 'error', text: toolResult.error || '关闭失败' };
+      }
+      return { status: 'success', text: '' };
     }
 
     return {

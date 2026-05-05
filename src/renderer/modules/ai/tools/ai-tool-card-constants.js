@@ -24,6 +24,8 @@ const TOOL_ICONS = {
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/><path d="M3 12h.01"/></svg>',
   remove_todo:
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>',
+  close_tab:
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
   end_session:
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>'
 };
@@ -39,6 +41,7 @@ const TOOL_COLORS = {
   complete_todo: '#22c55e',
   complete_todos: '#22c55e',
   remove_todo: '#ef4444',
+  close_tab: '#ef4444',
   end_session: '#64748b'
 };
 
@@ -63,7 +66,8 @@ const TRUNCATE_DESC_TOOLS = new Set([
   'list_todos',
   'complete_todo',
   'complete_todos',
-  'remove_todo'
+  'remove_todo',
+  'close_tab'
 ]);
 const DESC_TRUNCATE_LEN = 8;
 
@@ -118,8 +122,9 @@ function buildToolParamRows(toolName, args) {
     case 'complete_todo':
     case 'complete_todos':
     case 'remove_todo':
+    case 'close_tab':
     case 'end_session': {
-      // 待办系列和结束工具：description 已包含关键信息，不再重复参数行
+      // 关闭标签页和结束工具：description 已包含关键信息，不再重复参数行
       break;
     }
     default:
@@ -180,6 +185,8 @@ function getToolTitle(toolName) {
       return '批量完成待办项';
     case 'remove_todo':
       return '删除待办项';
+    case 'close_tab':
+      return '关闭标签页';
     case 'end_session':
       return '结束会话';
     default:

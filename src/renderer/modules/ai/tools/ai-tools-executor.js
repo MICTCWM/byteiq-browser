@@ -16,6 +16,8 @@ function createAiToolsExecutor(options) {
     switchTab,
     bindTabToSession,
     getTodoManager,
+    closeTab,
+    getTabById,
     store
   } = options;
 
@@ -197,7 +199,10 @@ function createAiToolsExecutor(options) {
           formatUrl,
           switchTab,
           bindTabToSession,
-          getTodoManager
+          getTodoManager,
+          closeTab,
+          getTabById,
+          getActiveTabId
         },
         args
       );
