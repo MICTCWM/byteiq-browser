@@ -57,7 +57,15 @@ function createToolCardUI(options) {
 
     // 待办系列工具使用向下展开的垂直布局
     if (isTodoTool(toolName)) {
-      todoRenderer.renderTodoStyle(target, displayTitle, description, status, toolName, color);
+      todoRenderer.renderTodoStyle(
+        target,
+        displayTitle,
+        description,
+        status,
+        toolName,
+        color,
+        cardOptions.toolResult
+      );
     } else if (style === 'text') {
       renderTextStyle(target, displayTitle, description, status, toolName, color, paramRows);
     } else if (style === 'badge') {

@@ -15,7 +15,7 @@ function formatTodoList(allTodos) {
       const mark = t.completed ? '[x]' : '[ ]';
       const pri = t.priority ? `(${t.priority})` : '';
       const num = idx + 1;
-      return `${num}. ${mark} ${pri} ${t.title}`;
+      return `${num}. ${mark} ${pri}{id:${t.id}} ${t.title}`;
     })
     .join('\n');
 }

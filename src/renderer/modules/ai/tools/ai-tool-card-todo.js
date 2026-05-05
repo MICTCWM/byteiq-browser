@@ -44,14 +44,17 @@ function parseTodoList(text) {
   if (!text) return [];
   const lines = text.split('\n').filter(l => l.trim());
   return lines.map(line => {
-    // 匹配格式: "1. [x] (high) 标题" 或 "1. [ ] (medium) 标题"
-    const match = line.match(/^(\d+)\.\s*\[([x\s])\]\s*(?:\(([^)]+)\))?\s*(.+)$/);
+    // 匹配格式: "1. [x] (high){id:todo-1} 标题" 或 "1. [ ] (medium){id:todo-2} 标题"
+    const match = line.match(
+      /^(\d+)\.\s*\[([x\s])\]\s*(?:\(([^)]+)\))?\s*(?:\{id:([^}]+)\})?\s*(.+)$/
+    );
     if (match) {
       return {
         num: match[1],
         completed: match[2] === 'x',
         priority: match[3] || '',
-        title: match[4]
+        id: match[4] || '',
+        title: match[5]
       };
     }
     return { raw: line };
@@ -69,8 +72,28 @@ function createTodoRenderer(deps) {
   /**
    * 待办工具垂直布局：图标+标题在上，详情列表向下展开
    */
-  function renderTodoStyle(target, title, description, status, toolName, color) {
+  function renderTodoStyle(target, title, description, status, toolName, color, toolResult) {
     target.classList.add('tool-card', 'tool-card-style-todo');
+
+    // 构建"本次新增/完成"的 ID 集合，用于区分新旧事项
+    const newIds = new Set();
+    if (toolResult) {
+      if (toolName === 'add_todo' && toolResult.todo) {
+        // add_todo 返回 todo 对象（单个）
+        if (toolResult.todo.id) newIds.add(toolResult.todo.id);
+      } else if (toolName === 'add_todos' && toolResult.addedIds) {
+        // add_todos 返回 addedIds 数组
+        toolResult.addedIds.forEach(id => newIds.add(id));
+      } else if (toolName === 'complete_todo' && toolResult.todo) {
+        // complete_todo 返回 todo 对象
+        if (toolResult.todo.id) newIds.add(toolResult.todo.id);
+      } else if (toolName === 'complete_todos' && toolResult.completed) {
+        // complete_todos 返回 completed 数组
+        toolResult.completed.forEach(t => {
+          if (t.id) newIds.add(t.id);
+        });
+      }
+    }
 
     // 头部行：图标 + 标题 + 状态
     const header = documentRef.createElement('div');
@@ -120,22 +143,12 @@ function createTodoRenderer(deps) {
       listContainer.className = 'tc-todo-list-container';
 
       const items = parseTodoList(listContent);
-      items.forEach((item, index) => {
+      items.forEach((item, _index) => {
         const itemEl = documentRef.createElement('div');
         itemEl.className = 'tc-todo-item';
 
-        // 识别新旧事项
-        let isNew = false;
-        if (toolName === 'add_todo' && index === items.length - 1) {
-          isNew = true;
-        } else if (toolName === 'add_todos') {
-          // 这里可以更复杂，但通常 add_todos 是在列表末尾添加 N 项
-          // 我们暂且让所有项都播放生长动画，或者通过某种标记识别
-          isNew = true;
-        } else if (toolName === 'complete_todo' || toolName === 'complete_todos') {
-          // 完成操作：已完成的项播放描边动画
-          isNew = item.completed;
-        }
+        // 识别新旧事项：只有 ID 在 newIds 集合中的才是新项
+        const isNew = item.id && newIds.has(item.id);
 
         itemEl.classList.add(isNew ? 'is-new' : 'is-old');
 
