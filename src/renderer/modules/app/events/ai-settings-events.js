@@ -8,6 +8,12 @@
  * @param {object} deps - 依赖
  * @returns {object} AI设置辅助方法
  */
+const {
+  getCandidateModelList,
+  setModelContextSize,
+  DEFAULT_CONTEXT_SIZE
+} = require('../../ai/context/ai-model-context-config');
+
 function bindAiSettingsEvents(deps) {
   const {
     aiApiKeyInput,
@@ -45,14 +51,26 @@ function bindAiSettingsEvents(deps) {
   const document = deps.documentRef;
 
   function getCandidateModels() {
-    const list = store.get('settings.aiModelCandidates', []);
-    return Array.isArray(list) ? list : [];
+    return getCandidateModelList(store);
   }
 
   function setCandidateModels(list) {
-    const next = Array.from(new Set((Array.isArray(list) ? list : []).filter(Boolean)));
+    // 去重（按 id）
+    const seen = new Set();
+    const next = (Array.isArray(list) ? list : []).filter(item => {
+      if (!item || !item.id || seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
     store.set('settings.aiModelCandidates', next);
     renderCandidateModels();
+  }
+
+  function formatContextSize(size) {
+    if (!size || size < 1024) return `${DEFAULT_CONTEXT_SIZE / 1024}K`;
+    if (size >= 1000000) return `${(size / 1000000).toFixed(1)}M`;
+    if (size % 1024 === 0) return `${size / 1024}K`;
+    return `${(size / 1024).toFixed(1)}K`;
   }
 
   function renderCandidateModels() {
@@ -66,25 +84,74 @@ function bindAiSettingsEvents(deps) {
     }
 
     models.forEach((model, index) => {
-      const tag = document.createElement('span');
-      tag.className = 'model-candidate-tag';
-      tag.title = model;
+      const tag = document.createElement('div');
+      tag.className = 'model-candidate-card';
+      tag.dataset.modelId = model.id;
+
+      const nameRow = document.createElement('div');
+      nameRow.className = 'model-card-name-row';
 
       const nameSpan = document.createElement('span');
-      nameSpan.className = 'model-candidate-name';
-      nameSpan.textContent = model;
-      tag.appendChild(nameSpan);
+      nameSpan.className = 'model-card-name';
+      nameSpan.textContent = model.id;
+      nameSpan.title = model.id;
+      nameRow.appendChild(nameSpan);
 
       const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'model-candidate-delete';
-      deleteBtn.innerHTML = '×';
-      deleteBtn.title = '删除';
-      deleteBtn.addEventListener('click', () => {
+      deleteBtn.className = 'model-card-delete';
+      deleteBtn.innerHTML = '\u00d7';
+      deleteBtn.title = t('panels.settings.ai.deleteModel') || '删除';
+      deleteBtn.addEventListener('click', e => {
+        e.stopPropagation();
         const currentModels = getCandidateModels();
         currentModels.splice(index, 1);
         setCandidateModels(currentModels);
       });
-      tag.appendChild(deleteBtn);
+      nameRow.appendChild(deleteBtn);
+
+      tag.appendChild(nameRow);
+
+      const ctxRow = document.createElement('div');
+      ctxRow.className = 'model-card-ctx-row';
+
+      const ctxLabel = document.createElement('span');
+      ctxLabel.className = 'model-card-ctx-label';
+      ctxLabel.textContent = t('panels.settings.ai.contextSize') || '上下文大小';
+      ctxRow.appendChild(ctxLabel);
+
+      const ctxInput = document.createElement('input');
+      ctxInput.type = 'number';
+      ctxInput.className = 'model-card-ctx-input';
+      ctxInput.value = model.contextSize || DEFAULT_CONTEXT_SIZE;
+      ctxInput.min = 1024;
+      ctxInput.max = 1000000;
+      ctxInput.step = 1024;
+      ctxInput.title = `${model.id} - ${t('panels.settings.ai.contextSize') || '上下文大小'}`;
+      ctxInput.addEventListener('change', () => {
+        const val = parseInt(ctxInput.value);
+        if (val && val >= 1024) {
+          ctxInput.value = val;
+          setModelContextSize(store, model.id, val);
+          // 更新显示
+          ctxDisplay.textContent = formatContextSize(val);
+          // 同步全局 contextSize（如果编辑的是当前模型）
+          const currentModelId = store.get('settings.aiModelId', '');
+          if (currentModelId === model.id) {
+            store.set('settings.aiContextSize', val);
+            if (aiContextSizeInput) aiContextSizeInput.value = val;
+          }
+        } else {
+          ctxInput.value = model.contextSize || DEFAULT_CONTEXT_SIZE;
+        }
+      });
+      ctxRow.appendChild(ctxInput);
+
+      const ctxDisplay = document.createElement('span');
+      ctxDisplay.className = 'model-card-ctx-display';
+      ctxDisplay.textContent = formatContextSize(model.contextSize);
+      ctxRow.appendChild(ctxDisplay);
+
+      tag.appendChild(ctxRow);
 
       aiModelCandidatesContainer.appendChild(tag);
     });
@@ -230,7 +297,8 @@ function bindAiSettingsEvents(deps) {
       const value = aiModelCandidateInput.value.trim();
       if (!value) return;
       const models = getCandidateModels();
-      models.push(value);
+      const defaultCtx = store.get('settings.aiContextSize', DEFAULT_CONTEXT_SIZE);
+      models.push({ id: value, contextSize: defaultCtx });
       setCandidateModels(models);
       aiModelCandidateInput.value = '';
     });
@@ -241,7 +309,8 @@ function bindAiSettingsEvents(deps) {
       const value = aiModelListSelect.value;
       if (!value) return;
       const models = getCandidateModels();
-      models.push(value);
+      const defaultCtx = store.get('settings.aiContextSize', DEFAULT_CONTEXT_SIZE);
+      models.push({ id: value, contextSize: defaultCtx });
       setCandidateModels(models);
     });
   }

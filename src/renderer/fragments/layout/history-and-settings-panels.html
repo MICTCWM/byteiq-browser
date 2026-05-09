@@ -263,20 +263,13 @@
                             <div class="model-list-status" id="ai-model-list-status" data-i18n="panels.settings.ai.waitingFetch">等待获取</div>
                         </div>
                     </div>
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label data-i18n="panels.settings.ai.contextSize">上下文大小</label>
-                            <div class="setting-desc" data-i18n="panels.settings.ai.contextSizeDesc">模型上下文窗口的 token 数量，影响对话历史保留长度</div>
-                        </div>
-                        <input type="number" id="ai-context-size-input" min="1024" max="1000000" step="1" value="8192" placeholder="8192">
-                    </div>
                     <!-- 高级选项 -->
                     <details class="advanced-options">
                         <summary data-i18n="panels.settings.ai.advancedOptions">高级选项</summary>
                         <div class="setting-item">
                             <div class="setting-info">
                                 <label>模型候选列表</label>
-                                <div class="setting-desc">用于聊天面板模型下拉选择</div>
+                                <div class="setting-desc">用于聊天面板模型下拉选择，每个模型可独立配置上下文大小</div>
                             </div>
                             <div class="setting-controls column">
                                 <div class="model-list-actions">
@@ -289,6 +282,13 @@
                                 </div>
                                 <div id="ai-model-candidates" class="model-list-status"></div>
                             </div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <label data-i18n="panels.settings.ai.defaultContextSize">默认上下文大小</label>
+                                <div class="setting-desc" data-i18n="panels.settings.ai.defaultContextSizeDesc">新添加模型的默认上下文大小</div>
+                            </div>
+                            <input type="number" id="ai-context-size-input" min="1024" max="1000000" step="1" value="8192" placeholder="8192">
                         </div>
                         <div class="setting-item">
                             <div class="setting-info">

@@ -5,6 +5,7 @@
 
 const { extractPageContent } = require('./ai-page-extractor');
 const { formatHistoryMessages, ensureToolMessagePairing } = require('./ai-history-formatter');
+const { getModelContextSize } = require('./ai-model-context-config');
 
 /**
  * 提取并设置页面上下文到 session
@@ -72,7 +73,7 @@ function createAiContextManager(options) {
     const formattedHistory = formatHistoryMessages(rawHistory);
 
     // 截断历史消息
-    const contextSize = store ? store.get('settings.aiContextSize', 8192) : 8192;
+    const contextSize = getModelContextSize(store);
     const maxHistoryMessages = Math.max(8, Math.floor((contextSize * 0.6) / 500));
     const truncatedHistory = promptBuilder.truncateHistorySmart(
       formattedHistory,

@@ -8,6 +8,7 @@ const {
   parseToolCallsFromText,
   removeToolCallTextFromContent
 } = require('../tools/ai-tool-call-parser');
+const { getModelContextSize } = require('../context/ai-model-context-config');
 const { createToolCardUI } = require('../tools/ai-tool-card-ui');
 const { createAgentPromptBuilder } = require('./ai-agent-prompt-builder');
 const { formatHistoryMessages } = require('../context/ai-history-formatter');
@@ -264,7 +265,7 @@ function createAiAgentRunner(options) {
     const formattedHistory = formatHistoryMessages(rawHistory);
 
     // 截断历史消息，保留最近的消息防止 token 超限
-    const contextSize = store ? store.get('settings.aiContextSize', 8192) : 8192;
+    const contextSize = getModelContextSize(store);
     const maxHistoryMessages = Math.max(8, Math.floor((contextSize * 0.6) / 500));
     const truncatedHistory = promptBuilder.truncateHistorySmart(
       formattedHistory,

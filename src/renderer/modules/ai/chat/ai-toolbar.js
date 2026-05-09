@@ -19,9 +19,10 @@ function createAiToolbar(options) {
   const uploadBtn = documentRef.getElementById('ai-upload-btn');
   const fileInput = documentRef.getElementById('ai-file-input');
 
+  const { getCandidateModelList } = require('../context/ai-model-context-config');
+
   function getStoredCandidateModels() {
-    const list = store ? store.get('settings.aiModelCandidates', []) : [];
-    return Array.isArray(list) ? list : [];
+    return getCandidateModelList(store);
   }
 
   function getStoredCurrentModel() {
@@ -196,18 +197,18 @@ function createAiToolbar(options) {
     const models = getStoredCandidateModels();
     const currentModel = getStoredCurrentModel();
 
-    models.forEach(modelId => {
+    models.forEach(model => {
       const btn = documentRef.createElement('button');
       btn.className = 'ai-model-item';
-      btn.textContent = modelId;
+      btn.textContent = model.id;
 
-      if (modelId === currentModel) {
+      if (model.id === currentModel) {
         btn.classList.add('active');
       }
 
       btn.addEventListener('click', e => {
         e.stopPropagation();
-        selectModel(modelId);
+        selectModel(model.id);
         closeAllMenus();
       });
 

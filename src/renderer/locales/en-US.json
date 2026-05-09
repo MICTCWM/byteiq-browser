@@ -172,7 +172,11 @@
         "fetchingModels": "Fetching model list...",
         "fetchedModels": "Fetched {count} models",
         "fetchFailed": "Fetch failed",
-        "configureEndpointKey": "Please configure endpoint and key first"
+        "configureEndpointKey": "Please configure endpoint and key first",
+        "deleteModel": "Delete",
+        "modelContextEdit": "Edit context size",
+        "defaultContextSize": "Default context size",
+        "defaultContextSizeDesc": "Default context size for newly added models"
       },
       "translation": {
         "title": "Translation Settings",

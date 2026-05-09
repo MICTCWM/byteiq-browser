@@ -5,6 +5,7 @@
 
 const { bindAiSettingsEvents } = require('./ai-settings-events');
 const { bindBrowserSettingsEvents } = require('./browser-settings-events');
+const { migrateCandidateModels } = require('../../ai/context/ai-model-context-config');
 
 function bindSettingsAndPanelEvents(options) {
   const {
@@ -156,7 +157,8 @@ function bindSettingsAndPanelEvents(options) {
         if (langSelect) {
           langSelect.value = store.get('settings.language', 'zh-CN');
         }
-        // 加载 AI 设置
+        // 加载 AI 设置（先迁移旧格式数据）
+        migrateCandidateModels(store);
         options.aiEndpointInput.value = store.get('settings.aiEndpoint', '');
         options.aiApiKeyInput.value = store.get('settings.aiApiKey', '');
         options.aiRequestTypeSelect.value = store.get('settings.aiRequestType', 'openai-chat');

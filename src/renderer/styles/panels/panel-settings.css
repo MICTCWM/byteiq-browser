@@ -430,62 +430,110 @@
     color: #5f6368;
 }
 
-/* 模型候选列表标签样式 */
+/* 模型候选列表卡片样式 */
 #ai-model-candidates {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
     padding: 8px 0;
     font-size: 12px;
     color: #5f6368;
 }
 
-.model-candidate-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    background: #e8f0fe;
-    border: 1px solid #d2e3fc;
-    border-radius: 16px;
-    font-size: 12px;
-    color: #1967d2;
+.model-candidate-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    min-width: 200px;
+    max-width: 320px;
     transition: all 0.2s ease;
-    max-width: 200px;
 }
 
-.model-candidate-tag:hover {
-    background: #d2e3fc;
+.model-candidate-card:hover {
+    background: #e8f0fe;
     border-color: #aecbfa;
+    box-shadow: 0 1px 4px rgba(25, 103, 210, 0.12);
 }
 
-.model-candidate-name {
+.model-card-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.model-card-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1967d2;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 160px;
+    flex: 1;
+    min-width: 0;
 }
 
-.model-candidate-delete {
+.model-card-delete {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     padding: 0;
     margin: 0;
     border: none;
     background: transparent;
-    color: #5f6368;
-    font-size: 14px;
+    color: #9aa0a6;
+    font-size: 16px;
     line-height: 1;
     cursor: pointer;
     border-radius: 50%;
     transition: all 0.15s ease;
+    flex-shrink: 0;
 }
 
-.model-candidate-delete:hover {
+.model-card-delete:hover {
     background: #ea4335;
     color: #fff;
+}
+
+.model-card-ctx-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.model-card-ctx-label {
+    font-size: 11px;
+    color: #5f6368;
+    white-space: nowrap;
+}
+
+.model-card-ctx-input {
+    width: 80px;
+    padding: 2px 6px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #202124;
+    text-align: right;
+    background: #fff;
+}
+
+.model-card-ctx-input:focus {
+    outline: none;
+    border-color: #1967d2;
+    box-shadow: 0 0 0 1px #aecbfa;
+}
+
+.model-card-ctx-display {
+    font-size: 11px;
+    color: #5f6368;
+    font-weight: 500;
+    min-width: 36px;
 }
 

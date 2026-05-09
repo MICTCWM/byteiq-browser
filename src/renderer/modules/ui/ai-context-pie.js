@@ -3,6 +3,8 @@
  * 负责 token 估算和上下文使用量饼图更新
  */
 
+const { getModelContextSize } = require('../ai/context/ai-model-context-config');
+
 /**
  * 创建上下文菜单管理器
  * @param {Object} options
@@ -55,10 +57,7 @@ function createContextMenu(options) {
   function updateContextPie() {
     if (!pieUsed) return;
     // 优先从 store 读取最新值，确保与设置同步
-    let contextSize = 8192;
-    if (store) {
-      contextSize = store.get('settings.aiContextSize', 8192);
-    }
+    const contextSize = getModelContextSize(store);
     const messages = agentRunner.getMessageHistory();
     const { total, system, history } = estimateHistoryTokens(messages);
     const pct = Math.min(100, Math.round((total / contextSize) * 100));
