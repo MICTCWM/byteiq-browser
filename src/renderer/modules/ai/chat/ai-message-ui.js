@@ -208,7 +208,7 @@ function createAiMessageUI(options) {
     const header = documentRef.createElement('div');
     header.className = 'think-dropdown-header';
     header.innerHTML = `
-      <span class="think-label">${isThinking ? 'Thinking' : 'Thoughts'}</span>
+      <span class="think-label">${isThinking ? 'Thinking' : 'Thought'}</span>
       <span class="think-toggle">${expanded ? '▲' : '▼'}</span>
     `;
 
@@ -374,7 +374,7 @@ function createAiMessageUI(options) {
       } else {
         dropdown.classList.toggle('thinking', isThinking);
         const label = dropdown.querySelector('.think-label');
-        if (label) label.textContent = isThinking ? 'Thinking' : 'Thoughts';
+        if (label) label.textContent = isThinking ? 'Thinking' : 'Thought';
         const contentEl = dropdown.querySelector('.think-dropdown-content');
         if (contentEl) {
           contentEl.textContent = cleanContent(finalResult.thinking);
@@ -470,7 +470,7 @@ function createAiMessageUI(options) {
       // 更新标签
       const label = dropdown.querySelector('.think-label');
       if (label) {
-        label.textContent = 'Thoughts';
+        label.textContent = 'Thought';
       }
 
       const thinkContent = dropdown.querySelector('.think-dropdown-content');
