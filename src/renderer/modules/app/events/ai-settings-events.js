@@ -197,7 +197,7 @@ function bindAiSettingsEvents(deps) {
   }
 
   async function refreshAiModelList() {
-    if (!aiModelRefreshBtn || !aiModelListSelect) return;
+    if (!aiModelRefreshBtn || !aiModelListSelect || !aiEndpointInput || !aiApiKeyInput || !aiRequestTypeSelect) return;
 
     const endpoint = aiEndpointInput.value.trim();
     const apiKey = aiApiKeyInput.value.trim();
@@ -244,29 +244,35 @@ function bindAiSettingsEvents(deps) {
   }
 
   // AI端点配置事件
-  aiEndpointInput.addEventListener('change', () => {
-    store.set('settings.aiEndpoint', aiEndpointInput.value);
-    if (aiModelListSelect) {
-      updateAiModelOptions([]);
-      setAiModelStatus(t('panels.settings.ai.waitingFetch'), '');
-    }
-  });
+  if (aiEndpointInput) {
+    aiEndpointInput.addEventListener('change', () => {
+      store.set('settings.aiEndpoint', aiEndpointInput.value);
+      if (aiModelListSelect) {
+        updateAiModelOptions([]);
+        setAiModelStatus(t('panels.settings.ai.waitingFetch'), '');
+      }
+    });
+  }
 
-  aiApiKeyInput.addEventListener('change', () => {
-    store.set('settings.aiApiKey', aiApiKeyInput.value);
-    if (aiModelListSelect) {
-      updateAiModelOptions([]);
-      setAiModelStatus(t('panels.settings.ai.waitingFetch'), '');
-    }
-  });
+  if (aiApiKeyInput) {
+    aiApiKeyInput.addEventListener('change', () => {
+      store.set('settings.aiApiKey', aiApiKeyInput.value);
+      if (aiModelListSelect) {
+        updateAiModelOptions([]);
+        setAiModelStatus(t('panels.settings.ai.waitingFetch'), '');
+      }
+    });
+  }
 
-  aiRequestTypeSelect.addEventListener('change', () => {
-    store.set('settings.aiRequestType', aiRequestTypeSelect.value);
-    if (aiModelListSelect) {
-      updateAiModelOptions([]);
-      setAiModelStatus(t('panels.settings.ai.waitingFetch'), '');
-    }
-  });
+  if (aiRequestTypeSelect) {
+    aiRequestTypeSelect.addEventListener('change', () => {
+      store.set('settings.aiRequestType', aiRequestTypeSelect.value);
+      if (aiModelListSelect) {
+        updateAiModelOptions([]);
+        setAiModelStatus(t('panels.settings.ai.waitingFetch'), '');
+      }
+    });
+  }
 
   if (aiModelIdInput) {
     aiModelIdInput.addEventListener('change', () => {
