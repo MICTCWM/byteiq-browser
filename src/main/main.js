@@ -30,6 +30,7 @@ const { registerTranslationIpc } = require('./modules/ipc/translation-ipc');
 const { registerAiIpc } = require('./modules/ipc/ai-ipc');
 const { registerVersionIpc } = require('./modules/ipc/version-ipc');
 const { registerDialogIpc } = require('./modules/ipc/dialog-ipc');
+const { registerPasswordIpc } = require('./modules/ipc/password-ipc');
 
 // 持久化存储实例
 const store = new Store();
@@ -81,6 +82,10 @@ registerDialogIpc({
   ipcMain,
   dialog,
   fs
+});
+registerPasswordIpc({
+  ipcMain,
+  store
 });
 
 // 设置webview窗口处理器，处理弹窗和新窗口

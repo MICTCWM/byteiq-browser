@@ -120,7 +120,13 @@ function getDomReferences(documentRef) {
     // 开发者工具面板元素
     devtoolsSidebar: documentRef.getElementById('devtools-sidebar'),
     devtoolsResizeHandle: documentRef.getElementById('devtools-resize-handle'),
-    closeDevtoolsBtn: documentRef.getElementById('close-devtools-btn')
+    closeDevtoolsBtn: documentRef.getElementById('close-devtools-btn'),
+    // 密码管理面板元素
+    passwordEnabledToggle: documentRef.getElementById('password-enabled-toggle'),
+    passwordAutofillToggle: documentRef.getElementById('password-autofill-toggle'),
+    passwordAvailabilityStatus: documentRef.getElementById('password-availability-status'),
+    passwordList: documentRef.getElementById('password-list'),
+    passwordListEmpty: documentRef.getElementById('password-list-empty')
   };
 }
 

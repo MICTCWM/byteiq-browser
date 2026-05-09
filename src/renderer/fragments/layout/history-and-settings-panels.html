@@ -73,6 +73,11 @@
                     <span data-i18n="panels.settings.nav.extensions">扩展</span>
                     <span class="beta-badge" data-tooltip="当前为测试版，无法保证可用性">BETA</span>
                 </button>
+                <button class="settings-nav-item" data-section="password">
+                    <div class="cyber-layer"></div>
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M17.13,17C15.92,18.85 14.11,20.24 12,20.92C9.89,20.24 8.08,18.85 6.87,17C6.53,16.5 6.24,16 6,15.47C6,13.82 8.71,12.47 12,12.47C15.29,12.47 18,13.79 18,15.47C17.76,16 17.47,16.5 17.13,17Z"/></svg>
+                    <span data-i18n="panels.settings.nav.password">密码</span>
+                </button>
                 <button class="settings-nav-item" data-section="about">
                     <div class="cyber-layer"></div>
                     <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/></svg>
@@ -432,6 +437,36 @@
                     <div id="extensions-empty" class="extensions-empty" data-i18n="panels.settings.noExtensions">暂未添加扩展</div>
                     <div id="extensions-list" class="extensions-list" role="list" aria-label="扩展列表"></div>
                     <div class="extensions-hint" data-i18n="panels.settings.extensionsSelectDir">提示：请选择包含 manifest.json 的扩展目录</div>
+                </div>
+                <!-- 密码管理 -->
+                <div id="settings-password" class="settings-section">
+                    <h3 data-i18n="panels.settings.password">密码管理</h3>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label data-i18n="panels.settings.passwordEnabled">启用密码管理</label>
+                            <div class="setting-desc" data-i18n="panels.settings.passwordEnabledDesc">自动保存和填充网站登录密码</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="password-enabled-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label data-i18n="panels.settings.passwordAutofill">自动填充</label>
+                            <div class="setting-desc" data-i18n="panels.settings.passwordAutofillDesc">访问已保存密码的网站时自动填充登录表单</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="password-autofill-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div id="password-availability-status" class="password-availability-status" style="display:none;"></div>
+                    <div class="password-list-header">
+                        <span data-i18n="panels.settings.savedPasswords">已保存的密码</span>
+                    </div>
+                    <div id="password-list-empty" class="password-list-empty" data-i18n="panels.settings.noSavedPasswords" style="display:none;">暂无已保存的密码</div>
+                    <div id="password-list" class="password-list" role="list" aria-label="密码列表"></div>
                 </div>
                 <!-- 关于 -->
                 <div id="settings-about" class="settings-section">

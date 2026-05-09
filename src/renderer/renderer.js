@@ -14,6 +14,7 @@ const { createShortcutsManager } = require('./modules/ui/shortcuts-manager');
 const { createTabManager } = require('./modules/tabs/tab-manager');
 const { createExtensionsManager } = require('./modules/extensions/extensions-manager');
 const { createTranslationManager } = require('./modules/ui/translation-manager');
+const { createPasswordUiManager } = require('./modules/password/password-ui-manager');
 const modalManager = require('./modules/ui/modal-manager');
 const store = new Store();
 initStore(store);
@@ -354,6 +355,21 @@ translationManager = createTranslationManager({
 });
 
 translationManager.bindEvents();
+
+const passwordUiManager = createPasswordUiManager({
+  ipcRenderer,
+  store,
+  t,
+  showToast,
+  modalManager,
+  passwordEnabledToggle: domRefs.passwordEnabledToggle,
+  passwordAutofillToggle: domRefs.passwordAutofillToggle,
+  passwordAvailabilityStatus: domRefs.passwordAvailabilityStatus,
+  passwordList: domRefs.passwordList,
+  passwordListEmpty: domRefs.passwordListEmpty
+});
+
+passwordUiManager.init();
 
 const shortcutsManager = createShortcutsManager({
   actions: {

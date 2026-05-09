@@ -49,6 +49,7 @@ function createTabWebviewEvents(options) {
     updateBookmarkIcon,
     onWebviewDidStopLoading,
     onWebviewUrlChanged,
+    onWebviewDomReady,
     setTabLoading,
     updateTabUrl,
     setTabIcon,
@@ -106,6 +107,11 @@ function createTabWebviewEvents(options) {
     webview.addEventListener('dom-ready', () => {
       if (webview.dataset) {
         webview.dataset.domReady = 'true';
+      }
+
+      // 注入密码检测脚本
+      if (typeof onWebviewDomReady === 'function') {
+        onWebviewDomReady(webview, id);
       }
     });
 

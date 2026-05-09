@@ -1,7 +1,33 @@
 ﻿// 创建标签页管理器工厂函数
+const path = require('path');
+const fs = require('fs');
 const { createTabHistoryManager } = require('./tab-history');
 const { createTabOrderManager } = require('./tab-order');
 const { createTabWebviewEvents } = require('./tab-webview-events');
+
+// 密码注入脚本内容缓存
+let passwordInjectScript = null;
+function getPasswordInjectScript() {
+  if (passwordInjectScript) return passwordInjectScript;
+  try {
+    const injectPath = path.join(__dirname, '..', 'password', 'password-inject.js');
+    passwordInjectScript = fs.readFileSync(injectPath, 'utf-8');
+  } catch (error) {
+    console.error('[tab-manager] failed to load password inject script:', error.message);
+    passwordInjectScript = '';
+  }
+  return passwordInjectScript;
+}
+
+// 密码 preload 脚本路径
+const passwordPreloadPath = path.join(
+  __dirname,
+  '..',
+  '..',
+  'main',
+  'preloads',
+  'password-preload.js'
+);
 
 function createTabManager(options) {
   const {
@@ -52,6 +78,32 @@ function createTabManager(options) {
     updateBookmarkIcon,
     onWebviewDidStopLoading,
     onWebviewUrlChanged,
+    onWebviewDomReady: (webview, _tabId) => {
+      // 密码管理启用时注入表单检测脚本
+      const passwordEnabled = store.get('settings.passwordEnabled', false);
+      if (!passwordEnabled) return;
+
+      // 仅注入到安全页面（HTTPS 或 localhost）
+      try {
+        const url = webview.getURL();
+        if (!url) return;
+        const protocol = new URL(url).protocol;
+        if (protocol !== 'https:' && !(protocol === 'http:' && url.includes('localhost'))) {
+          return;
+        }
+      } catch {
+        return;
+      }
+
+      const script = getPasswordInjectScript();
+      if (script) {
+        webview.executeJavaScript(script).catch(err => {
+          if (err && err.code !== 'ERR_ABORTED') {
+            console.error('[tab-manager] password inject failed:', err.message);
+          }
+        });
+      }
+    },
     setTabLoading,
     updateTabUrl,
     setTabIcon,
@@ -277,6 +329,15 @@ function createTabManager(options) {
       webview.id = `webview-${id}`;
       webview.src = formattedUrl;
       webview.setAttribute('allowpopups', '');
+
+      // 设置密码管理 preload
+      try {
+        if (fs.existsSync(passwordPreloadPath)) {
+          webview.setAttribute('preload', passwordPreloadPath);
+        }
+      } catch {
+        // preload 文件不存在时静默跳过
+      }
 
       if (getIncognito()) {
         webview.setAttribute('partition', 'incognito');
