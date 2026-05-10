@@ -11,7 +11,7 @@
 ### 2. 克隆仓库
 
 ```bash
-git clone https://github.com/你的用户名/byteiq-browser.git
+git clone https://github.com/MICTCWM/byteiq-browser.git
 cd byteiq-browser
 ```
 
@@ -98,7 +98,7 @@ Closes #123
 
 ### 1. 选择任务
 
-查看 [Issues](https://github.com/你的用户名/byteiq-browser/issues) 页面：
+查看 [Issues](https://github.com/MICTCWM/byteiq-browser/issues) 页面：
 - 标记为 `good first issue` 的任务适合新手
 - 标记为 `help wanted` 的任务需要帮助
 - 也可以提出新的 Issue
@@ -136,21 +136,24 @@ git push origin feature/你的功能名称
 
 ```
 byteiq-browser/
-├── main.js              # Electron 主进程
-├── index.html           # 主界面
-├── package.json         # 项目配置
+├── src/                # 源代码目录
+│   ├── main/           # Electron 主进程
+│   │   ├── modules/    # 主进程功能模块
+│   │   └── preloads/   # 预加载脚本
+│   └── renderer/       # 渲染进程（UI）
+│       ├── fragments/  # 布局片段
+│       ├── modules/    # 功能模块
+│       ├── locales/    # 国际化文件
+│       ├── styles/     # 样式文件
+│       └── i18n.js     # 国际化配置
+├── tests/              # 测试文件
+├── assets/             # 静态资源
+├── .github/            # GitHub 配置
 ├── CONTRIBUTING.md     # 贡献指南（本文件）
 ├── README.md           # 项目说明
 ├── LICENSE             # 开源许可证
 ├── CODE_OF_CONDUCT.md  # 行为准则
-├── .gitignore          # Git 忽略文件
-├── docs/               # 文档目录
-│   ├── 开源教程.md
-│   └── ...
-└── src/                # 源代码目录
-    ├── renderer/       # 渲染进程
-    ├── main/           # 主进程代码
-    └── shared/         # 共享代码
+└── package.json        # 项目配置
 ```
 
 ## 贡献类型
@@ -192,7 +195,7 @@ byteiq-browser/
 
 如果你在贡献过程中遇到问题：
 
-1. 查看 [Issues](https://github.com/你的用户名/byteiq-browser/issues) 页面
+1. 查看 [Issues](https://github.com/MICTCWM/byteiq-browser/issues) 页面
 2. 在 Issue 中提问
 3. 加入我们的社区讨论
 
