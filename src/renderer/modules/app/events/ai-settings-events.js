@@ -13,6 +13,7 @@ const {
   ensureAiProfiles,
   getAiProfiles,
   addAiProfile,
+  deleteAiProfile,
   upsertAiProfile,
   applyAiProfile,
   setModelContextSize,
@@ -23,7 +24,9 @@ function bindAiSettingsEvents(deps) {
   const {
     aiProfileSelect,
     aiProfileAddBtn,
+    aiProfileDeleteBtn,
     aiProfileApplyBtn,
+    aiProfileNameInput,
     aiApiKeyInput,
     aiEndpointInput,
     aiModelIdInput,
@@ -58,17 +61,58 @@ function bindAiSettingsEvents(deps) {
 
   const document = deps.documentRef;
 
+  let lastProfileId = '';
+  let isDirty = false;
+
+  function markDirty() {
+    isDirty = true;
+  }
+
+  function resetDirty(nextProfileId) {
+    isDirty = false;
+    if (nextProfileId) {
+      lastProfileId = nextProfileId;
+    }
+  }
+
   function getActiveProfileId() {
     return store ? store.get('settings.activeAiProfileId', '') : '';
+  }
+
+  function saveCurrentProfileIfNeeded(profileId) {
+    if (!store || !profileId) return;
+    if (!isDirty) return;
+
+    let confirmed;
+    try {
+      confirmed = window.confirm('当前配置未保存，是否保存到当前配置？');
+    } catch {
+      confirmed = true;
+    }
+
+    if (!confirmed) {
+      throw new Error('CANCEL_SWITCH');
+    }
+
+    const uiProfile = readProfileFromUi(profileId);
+    const profiles = getAiProfiles(store);
+    const currentName = profiles.find(p => p.id === profileId)?.name;
+    if (!uiProfile.name) {
+      uiProfile.name = currentName || '配置';
+    }
+    upsertAiProfile(store, uiProfile);
+    resetDirty(profileId);
   }
 
   function readProfileFromUi(profileId) {
     const defaultCtx = store.get('settings.aiContextSize', DEFAULT_CONTEXT_SIZE);
     const candidates = getCandidateModels();
 
+    const profileName = aiProfileNameInput ? aiProfileNameInput.value.trim() : '';
+
     return {
       id: profileId,
-      name: profileId,
+      name: profileName || '配置',
       endpoint: aiEndpointInput ? aiEndpointInput.value.trim() : '',
       apiKey: aiApiKeyInput ? aiApiKeyInput.value.trim() : '',
       requestType: aiRequestTypeSelect ? aiRequestTypeSelect.value : 'openai-chat',
@@ -90,6 +134,7 @@ function bindAiSettingsEvents(deps) {
 
   function fillUiFromProfile(profile) {
     if (!profile) return;
+    if (aiProfileNameInput) aiProfileNameInput.value = profile.name || '';
     if (aiEndpointInput) aiEndpointInput.value = profile.endpoint || '';
     if (aiApiKeyInput) aiApiKeyInput.value = profile.apiKey || '';
     if (aiRequestTypeSelect) aiRequestTypeSelect.value = profile.requestType || 'openai-chat';
@@ -109,6 +154,8 @@ function bindAiSettingsEvents(deps) {
         setAiModelStatus(t('panels.settings.ai.waitingFetch'), '');
       }
     }
+
+    resetDirty(profile.id);
   }
 
   function renderProfilesSelect(profiles, activeId) {
@@ -162,6 +209,7 @@ function bindAiSettingsEvents(deps) {
       seen.add(item.id);
       return true;
     });
+    markDirty();
     store.set('settings.aiModelCandidates', next);
     renderCandidateModels();
   }
@@ -231,6 +279,7 @@ function bindAiSettingsEvents(deps) {
         const val = parseInt(ctxInput.value);
         if (val && val >= 1024) {
           ctxInput.value = val;
+          markDirty();
           setModelContextSize(store, model.id, val);
           // 更新显示
           ctxDisplay.textContent = formatContextSize(val);
@@ -353,6 +402,7 @@ function bindAiSettingsEvents(deps) {
   // AI端点配置事件
   if (aiEndpointInput) {
     aiEndpointInput.addEventListener('change', () => {
+      markDirty();
       store.set('settings.aiEndpoint', aiEndpointInput.value);
       if (aiModelListSelect) {
         updateAiModelOptions([]);
@@ -363,6 +413,7 @@ function bindAiSettingsEvents(deps) {
 
   if (aiApiKeyInput) {
     aiApiKeyInput.addEventListener('change', () => {
+      markDirty();
       store.set('settings.aiApiKey', aiApiKeyInput.value);
       if (aiModelListSelect) {
         updateAiModelOptions([]);
@@ -373,6 +424,7 @@ function bindAiSettingsEvents(deps) {
 
   if (aiRequestTypeSelect) {
     aiRequestTypeSelect.addEventListener('change', () => {
+      markDirty();
       store.set('settings.aiRequestType', aiRequestTypeSelect.value);
       if (aiModelListSelect) {
         updateAiModelOptions([]);
@@ -383,14 +435,35 @@ function bindAiSettingsEvents(deps) {
 
   if (aiModelIdInput) {
     aiModelIdInput.addEventListener('change', () => {
+      markDirty();
       store.set('settings.aiModelId', aiModelIdInput.value);
       syncAiModelSelection();
+    });
+  }
+
+  if (aiProfileNameInput) {
+    aiProfileNameInput.addEventListener('change', () => {
+      markDirty();
     });
   }
 
   if (aiProfileSelect) {
     aiProfileSelect.addEventListener('change', () => {
       if (!store) return;
+
+      const fromId = lastProfileId || getActiveProfileId();
+      try {
+        saveCurrentProfileIfNeeded(fromId);
+      } catch (err) {
+        if (err && err.message === 'CANCEL_SWITCH') {
+          if (fromId) {
+            aiProfileSelect.value = fromId;
+          }
+          return;
+        }
+        throw err;
+      }
+
       const profiles = getAiProfiles(store);
       const id = aiProfileSelect.value;
       const profile = profiles.find(p => p.id === id);
@@ -403,12 +476,99 @@ function bindAiSettingsEvents(deps) {
   if (aiProfileAddBtn) {
     aiProfileAddBtn.addEventListener('click', () => {
       if (!store) return;
+
+      const fromId = lastProfileId || getActiveProfileId();
+      try {
+        saveCurrentProfileIfNeeded(fromId);
+      } catch (err) {
+        if (err && err.message === 'CANCEL_SWITCH') {
+          return;
+        }
+        throw err;
+      }
+
       const profile = addAiProfile(store);
       const profiles = getAiProfiles(store);
       renderProfilesSelect(profiles, profile?.id);
       if (profile) {
         fillUiFromProfile(profile);
       }
+    });
+  }
+
+  if (aiProfileDeleteBtn) {
+    aiProfileDeleteBtn.addEventListener('click', () => {
+      if (!store) return;
+
+      // 删除前检查是否有未保存修改
+      const fromId = lastProfileId || getActiveProfileId();
+      if (isDirty && fromId) {
+        let confirmed;
+        try {
+          confirmed = window.confirm('当前配置有未保存的修改，是否保存后再删除？');
+        } catch {
+          confirmed = true;
+        }
+        if (confirmed) {
+          const uiProfile = readProfileFromUi(fromId);
+          const profiles = getAiProfiles(store);
+          const currentName = profiles.find(p => p.id === fromId)?.name;
+          if (!uiProfile.name) {
+            uiProfile.name = currentName || '配置';
+          }
+          upsertAiProfile(store, uiProfile);
+          resetDirty(fromId);
+        } else {
+          // 用户选择不保存，继续删除
+        }
+      }
+
+      const profiles = getAiProfiles(store);
+      if (profiles.length <= 1) {
+        try {
+          window.alert('至少需要保留一个配置');
+        } catch {
+          // ignore
+        }
+        return;
+      }
+
+      const currentId = aiProfileSelect ? aiProfileSelect.value : getActiveProfileId();
+      if (!currentId) return;
+
+      const currentProfile = profiles.find(p => p.id === currentId);
+      const profileName = currentProfile?.name || '配置';
+
+      let confirmed;
+      try {
+        confirmed = window.confirm(`确定要删除配置「${profileName}」吗？`);
+      } catch {
+        confirmed = false;
+      }
+      if (!confirmed) return;
+
+      const removed = deleteAiProfile(store, currentId);
+      if (!removed) return;
+
+      // 删除后重新加载
+      const nextProfiles = getAiProfiles(store);
+      const newActiveId = store.get('settings.activeAiProfileId', nextProfiles[0]?.id);
+      renderProfilesSelect(nextProfiles, newActiveId);
+
+      const newActive = nextProfiles.find(p => p.id === newActiveId) || nextProfiles[0];
+      if (newActive) {
+        fillUiFromProfile(newActive);
+      }
+
+      try {
+        window.dispatchEvent(
+          new CustomEvent('ai-profile-applied', { detail: { profileId: newActiveId } })
+        );
+      } catch {
+        // ignore
+      }
+
+      resetDirty(newActiveId);
     });
   }
 
@@ -421,7 +581,9 @@ function bindAiSettingsEvents(deps) {
       const uiProfile = readProfileFromUi(activeId);
       const profiles = getAiProfiles(store);
       const currentName = profiles.find(p => p.id === activeId)?.name;
-      uiProfile.name = currentName || '配置';
+      if (!uiProfile.name) {
+        uiProfile.name = currentName || '配置';
+      }
       upsertAiProfile(store, uiProfile);
       const applied = applyAiProfile(store, activeId);
       if (!applied) return;
@@ -453,6 +615,8 @@ function bindAiSettingsEvents(deps) {
       } catch {
         // ignore
       }
+
+      resetDirty(activeId);
     });
   }
 
@@ -463,6 +627,7 @@ function bindAiSettingsEvents(deps) {
       if (aiModelIdInput) {
         aiModelIdInput.value = value;
       }
+      markDirty();
       store.set('settings.aiModelId', value);
     });
   }
@@ -480,6 +645,7 @@ function bindAiSettingsEvents(deps) {
       const models = getCandidateModels();
       const defaultCtx = store.get('settings.aiContextSize', DEFAULT_CONTEXT_SIZE);
       models.push({ id: value, contextSize: defaultCtx });
+      markDirty();
       setCandidateModels(models);
       aiModelCandidateInput.value = '';
     });
@@ -492,12 +658,14 @@ function bindAiSettingsEvents(deps) {
       const models = getCandidateModels();
       const defaultCtx = store.get('settings.aiContextSize', DEFAULT_CONTEXT_SIZE);
       models.push({ id: value, contextSize: defaultCtx });
+      markDirty();
       setCandidateModels(models);
     });
   }
 
   if (aiModelCandidateClearBtn) {
     aiModelCandidateClearBtn.addEventListener('click', () => {
+      markDirty();
       setCandidateModels([]);
     });
   }
@@ -507,6 +675,7 @@ function bindAiSettingsEvents(deps) {
     aiContextSizeInput.addEventListener('input', () => {
       const val = parseInt(aiContextSizeInput.value);
       if (val && val >= 1024) {
+        markDirty();
         store.set('settings.aiContextSize', val);
       }
     });
@@ -514,6 +683,7 @@ function bindAiSettingsEvents(deps) {
       const val = parseInt(aiContextSizeInput.value);
       if (val && val >= 1024) {
         aiContextSizeInput.value = val;
+        markDirty();
         store.set('settings.aiContextSize', val);
       } else {
         // 输入无效时恢复存储值

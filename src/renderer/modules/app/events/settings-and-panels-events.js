@@ -24,7 +24,9 @@ function bindSettingsAndPanelEvents(options) {
   const aiSettingsHelpers = bindAiSettingsEvents({
     aiProfileSelect: options.aiProfileSelect,
     aiProfileAddBtn: options.aiProfileAddBtn,
+    aiProfileDeleteBtn: options.aiProfileDeleteBtn,
     aiProfileApplyBtn: options.aiProfileApplyBtn,
+    aiProfileNameInput: options.aiProfileNameInput,
     aiApiKeyInput: options.aiApiKeyInput,
     aiEndpointInput: options.aiEndpointInput,
     aiModelIdInput: options.aiModelIdInput,

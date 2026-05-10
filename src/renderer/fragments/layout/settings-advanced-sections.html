@@ -8,10 +8,17 @@
                         </div>
                         <div class="setting-controls">
                             <select id="ai-profile-select" class="setting-select"></select>
-                            <input type="text" id="ai-profile-name-input" placeholder="配置名称" style="width:120px">
                             <button id="ai-profile-add-btn" class="setting-action-btn" title="新增">+</button>
+                            <button id="ai-profile-delete-btn" class="setting-action-btn danger" title="删除配置">−</button>
                             <button id="ai-profile-apply-btn" class="setting-action-btn primary">应用</button>
                         </div>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label>配置名称</label>
+                            <div class="setting-desc">用于在下拉列表中区分不同配置</div>
+                        </div>
+                        <input type="text" id="ai-profile-name-input" placeholder="例如：OpenAI / 公司内网 / 测试环境">
                     </div>
                     <div class="setting-item">
                         <div class="setting-info">
