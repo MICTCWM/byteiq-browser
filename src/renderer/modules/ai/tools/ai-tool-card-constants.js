@@ -53,7 +53,7 @@ const STATUS_ICONS = {
   pending:
     '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>',
   running:
-    '<svg class="tool-running-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 1 10 10"/></svg>'
+    '<svg class="tool-running-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a10 10 0 0 1 10 10"/><path d="M22 12a10 10 0 0 1-10 10" opacity=".35"/><path d="M12 22a10 10 0 0 1-10-10" opacity=".1"/></svg>'
 };
 
 // 需要描述文字8字截断+hover完整提示的工具
