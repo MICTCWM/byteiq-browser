@@ -122,6 +122,16 @@ user-data/
 .gitnexus/
 
 # ==================== 其他 ====================
+# Kilo
+.kilo
+
+# CGC
+.cgcignore
+
+# 根目录临时测试脚本
+/test-ai-request.js
+/test-session-binding.js
+
 # 本地规划工作区
 plans/
 
