@@ -10,6 +10,7 @@ const {
   getStatusIcon,
   getToolTitle
 } = require('../tools/ai-tool-card-constants');
+const { createBadgeStyleRenderer } = require('../tools/ai-tool-style-badge');
 
 /**
  * 创建后台任务面板 UI
@@ -241,8 +242,32 @@ function createBgTaskPanelUI(options) {
     }
   }
 
+  // 复用 badge 渲染器
+  function hexToRgba(hex, alpha) {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function createDescElement(text, _toolName) {
+    const el = documentRef.createElement('span');
+    el.textContent = text || '';
+    return el;
+  }
+
+  const { renderBadgeStyle } = createBadgeStyleRenderer({
+    documentRef,
+    getStatusIcon,
+    getToolIcon,
+    createDescElement,
+    buildParamSummary: () => '',
+    hexToRgba
+  });
+
   /**
-   * 渲染工具标签内容
+   * 渲染工具标签内容（复用 badge 渲染器）
    * @param {HTMLElement} badgeEl - 标签容器
    * @param {Object} toolCallInfo - 工具调用信息 { toolName, status, title }
    */
@@ -254,39 +279,8 @@ function createBgTaskPanelUI(options) {
     const title = toolCallInfo.title || getToolTitle(toolCallInfo.toolName);
     const status = toolCallInfo.status || 'running';
 
-    // 工具图标
-    const iconEl = documentRef.createElement('span');
-    iconEl.className = 'bg-task-tool-icon' + (status === 'running' ? ' bg-tool-running' : '');
-    iconEl.style.color = color;
-    const iconSvg = getToolIcon(toolCallInfo.toolName);
-    if (iconSvg) {
-      // 缩小图标尺寸适配标签
-      iconEl.innerHTML = iconSvg
-        .replace(/width="18"/g, 'width="12"')
-        .replace(/height="18"/g, 'height="12"');
-    }
-    badgeEl.appendChild(iconEl);
-
-    // 工具标题
-    const labelEl = documentRef.createElement('span');
-    labelEl.className = 'bg-task-tool-label';
-    labelEl.style.color = color;
-    labelEl.textContent = title;
-    badgeEl.appendChild(labelEl);
-
-    // 状态图标（非 running 时显示）
-    if (status !== 'running') {
-      const statusEl = documentRef.createElement('span');
-      statusEl.className = 'bg-task-tool-status';
-      statusEl.style.color = status === 'error' ? '#f44336' : '#4caf50';
-      const statusSvg = getStatusIcon(status);
-      if (statusSvg) {
-        statusEl.innerHTML = statusSvg
-          .replace(/width="14"/g, 'width="10"')
-          .replace(/height="14"/g, 'height="10"');
-      }
-      badgeEl.appendChild(statusEl);
-    }
+    // 直接复用 badge 渲染器，描述传空
+    renderBadgeStyle(badgeEl, title, '', status, toolCallInfo.toolName, color, []);
   }
 
   /**
