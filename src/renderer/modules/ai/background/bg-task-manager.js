@@ -9,13 +9,19 @@
  * @returns {Object} 任务管理器实例
  */
 function createBgTaskManager(options = {}) {
-  const { onTaskStatusChange, onToolCallUpdate } = options;
+  const { onTaskStatusChange, onToolCallUpdate, store } = options;
 
   // 任务列表
   const tasks = new Map();
 
   // 任务 ID 计数器
   let taskCounter = 0;
+
+  // 持久化存储键名
+  const STORE_KEY = 'bgTasks';
+
+  // 最大保存任务数
+  const MAX_PERSIST_TASKS = 50;
 
   /**
    * 生成唯一任务 ID
@@ -48,6 +54,7 @@ function createBgTaskManager(options = {}) {
     if (typeof onTaskStatusChange === 'function') {
       onTaskStatusChange(task);
     }
+    saveTasks();
     return task;
   }
 
@@ -65,6 +72,7 @@ function createBgTaskManager(options = {}) {
     if (typeof onTaskStatusChange === 'function') {
       onTaskStatusChange(task);
     }
+    saveTasks();
   }
 
   /**
@@ -81,6 +89,7 @@ function createBgTaskManager(options = {}) {
     if (typeof onTaskStatusChange === 'function') {
       onTaskStatusChange(task);
     }
+    saveTasks();
   }
 
   /**
@@ -101,6 +110,7 @@ function createBgTaskManager(options = {}) {
     if (typeof onTaskStatusChange === 'function') {
       onTaskStatusChange(task);
     }
+    saveTasks();
   }
 
   /**
@@ -208,7 +218,75 @@ function createBgTaskManager(options = {}) {
    */
   function removeTask(taskId) {
     tasks.delete(taskId);
+    saveTasks();
   }
+
+  /**
+   * 序列化可持久化的任务数据（排除运行时字段）
+   * @param {Object} task - 任务对象
+   * @returns {Object} 可序列化的任务数据
+   */
+  function serializeTask(task) {
+    return {
+      id: task.id,
+      name: task.name,
+      fullText: task.fullText,
+      status: task.status,
+      result: task.result,
+      createdAt: task.createdAt,
+      completedAt: task.completedAt,
+      latestToolCall: task.latestToolCall
+    };
+  }
+
+  /**
+   * 将已结束的任务保存到 store
+   */
+  function saveTasks() {
+    if (!store) return;
+    const persistable = [];
+    tasks.forEach(task => {
+      if (task.status !== 'running') {
+        persistable.push(serializeTask(task));
+      }
+    });
+    // 按 completedAt 倒序，保留最新 MAX_PERSIST_TASKS 条
+    persistable.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+    store.set(STORE_KEY, persistable.slice(0, MAX_PERSIST_TASKS));
+  }
+
+  /**
+   * 从 store 加载已保存的任务
+   */
+  function loadTasks() {
+    if (!store) return;
+    const saved = store.get(STORE_KEY);
+    if (!Array.isArray(saved)) return;
+    saved.forEach(data => {
+      // running 任务在重启后标记为中断
+      if (data.status === 'running') {
+        data.status = 'error';
+        data.result = '应用重启，任务中断';
+        data.completedAt = data.completedAt || Date.now();
+      }
+      // 重建运行时字段
+      const task = {
+        ...data,
+        hiddenWebviewIds: [],
+        abortController: null
+      };
+      tasks.set(task.id, task);
+      // 恢复计数器，避免 ID 冲突
+      const counterMatch = task.id.match(/bg-task-\d+-(\d+)/);
+      if (counterMatch) {
+        const c = parseInt(counterMatch[1], 10);
+        if (c > taskCounter) taskCounter = c;
+      }
+    });
+  }
+
+  // 初始化时加载持久化数据
+  loadTasks();
 
   return {
     createTask,

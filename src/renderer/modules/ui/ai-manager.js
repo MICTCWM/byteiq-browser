@@ -480,7 +480,8 @@ function createAiManager(options) {
     },
     onToolCallUpdate: (taskId, toolCallInfo) => {
       if (bgTaskPanelUI) bgTaskPanelUI.updateTaskToolBadge(taskId, toolCallInfo);
-    }
+    },
+    store
   });
 
   // 创建后台任务通知组件

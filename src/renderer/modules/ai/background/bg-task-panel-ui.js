@@ -305,7 +305,7 @@ function createBgTaskPanelUI(options) {
   }
 
   /**
-   * 更新单个任务的工具标签（增量更新，避免全量重渲染）
+   * 更新单个任务的工具标签（增量更新，带切换动画）
    * @param {string} taskId - 任务 ID
    * @param {Object} toolCallInfo - 工具调用信息
    */
@@ -316,7 +316,6 @@ function createBgTaskPanelUI(options) {
 
     let badgeEl = itemEl.querySelector('.bg-task-tool-badge');
     if (!badgeEl) {
-      // 如果标签元素不存在（可能在 nameEl 和 timeEl 之间插入）
       badgeEl = documentRef.createElement('span');
       badgeEl.className = 'bg-task-tool-badge';
       const nameEl = itemEl.querySelector('.bg-task-name');
@@ -327,7 +326,60 @@ function createBgTaskPanelUI(options) {
       }
     }
 
-    renderToolBadgeContent(badgeEl, toolCallInfo);
+    // 动画版本号，防止防重入后旧 animationend 回调破坏新状态
+    badgeEl._animVersion = (badgeEl._animVersion || 0) + 1;
+    const animVersion = badgeEl._animVersion;
+
+    // 如果正在执行动画，立即完成当前动画再开始新的
+    if (badgeEl._animating) {
+      badgeEl.classList.remove('tool-fade-out', 'tool-fade-in');
+      renderToolBadgeContent(badgeEl, toolCallInfo);
+      badgeEl._animating = false;
+    }
+
+    // 判断是否有旧内容需要渐隐
+    const hasOldContent = badgeEl.innerHTML && badgeEl.innerHTML.trim() !== '';
+
+    if (hasOldContent) {
+      // 旧内容下滑渐隐
+      badgeEl._animating = true;
+      badgeEl._pendingToolCall = toolCallInfo;
+      badgeEl.classList.add('tool-fade-out');
+
+      const onFadeOut = e => {
+        if (e.target !== badgeEl) return;
+        if (badgeEl._animVersion !== animVersion) return;
+        badgeEl.removeEventListener('animationend', onFadeOut);
+        badgeEl.classList.remove('tool-fade-out');
+
+        // 替换为新内容
+        renderToolBadgeContent(badgeEl, badgeEl._pendingToolCall);
+        badgeEl._pendingToolCall = null;
+
+        // 新内容由上向下渐显
+        badgeEl.classList.add('tool-fade-in');
+        const onFadeIn = e => {
+          if (e.target !== badgeEl) return;
+          if (badgeEl._animVersion !== animVersion) return;
+          badgeEl.removeEventListener('animationend', onFadeIn);
+          badgeEl.classList.remove('tool-fade-in');
+          badgeEl._animating = false;
+        };
+        badgeEl.addEventListener('animationend', onFadeIn);
+      };
+      badgeEl.addEventListener('animationend', onFadeOut);
+    } else {
+      // 首次渲染，直接渐显
+      renderToolBadgeContent(badgeEl, toolCallInfo);
+      badgeEl.classList.add('tool-fade-in');
+      const onFadeIn = e => {
+        if (e.target !== badgeEl) return;
+        if (badgeEl._animVersion !== animVersion) return;
+        badgeEl.removeEventListener('animationend', onFadeIn);
+        badgeEl.classList.remove('tool-fade-in');
+      };
+      badgeEl.addEventListener('animationend', onFadeIn);
+    }
   }
 
   return {

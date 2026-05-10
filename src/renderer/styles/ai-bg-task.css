@@ -154,6 +154,37 @@
   white-space: nowrap;
 }
 
+/* 工具标签切换动画 */
+@keyframes bg-tool-fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes bg-tool-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bg-task-tool-badge.tool-fade-out {
+  animation: bg-tool-fade-out 0.2s ease forwards;
+}
+
+.bg-task-tool-badge.tool-fade-in {
+  animation: bg-tool-fade-in 0.25s ease forwards;
+}
+
 /* badge 渲染器在非 chat-message 上下文中的适配 */
 .bg-task-tool-badge.tool-card-style-badge {
   display: flex;
