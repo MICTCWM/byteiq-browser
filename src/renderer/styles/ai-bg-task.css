@@ -81,7 +81,8 @@
   transition: background 0.2s;
 }
 
-.bg-task-item.bg-task-running {
+.bg-task-item.bg-task-running,
+.bg-task-item.bg-task-retrying {
   background: var(--bg-secondary, #f5f5f5);
 }
 
@@ -117,16 +118,19 @@
   color: #f44336;
 }
 
-.bg-task-running .bg-task-status-icon {
+.bg-task-running .bg-task-status-icon,
+.bg-task-retrying .bg-task-status-icon {
   color: var(--brand-primary);
 }
 
-.bg-task-running .bg-task-status-icon svg {
+.bg-task-running .bg-task-status-icon svg,
+.bg-task-retrying .bg-task-status-icon svg {
   width: 16px;
   height: 16px;
 }
 
-.bg-task-running .bg-task-status-icon .tool-running-svg {
+.bg-task-running .bg-task-status-icon .tool-running-svg,
+.bg-task-retrying .bg-task-status-icon .tool-running-svg {
   animation: tool-running-spin 1s linear infinite;
 }
 
@@ -142,6 +146,14 @@
 @keyframes bg-task-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* 重试倒计时 */
+.bg-task-retry-info {
+  font-size: 11px;
+  color: var(--brand-primary);
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 /* 任务名称 */

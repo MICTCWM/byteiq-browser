@@ -23,6 +23,7 @@ function createBgTaskPanelUI(options) {
   let panelEl = null;
   let taskListEl = null;
   let resultOverlayEl = null;
+  let retryCountdownTimer = null;
 
   /**
    * 初始化面板 DOM
@@ -120,7 +121,7 @@ function createBgTaskPanelUI(options) {
       // 状态图标（复用工具卡片的状态图标）
       const statusIcon = documentRef.createElement('span');
       statusIcon.className = 'bg-task-status-icon';
-      if (task.status === 'running') {
+      if (task.status === 'running' || task.status === 'retrying') {
         statusIcon.innerHTML = getStatusIcon('running');
       } else if (task.status === 'completed') {
         statusIcon.innerHTML =
@@ -140,10 +141,18 @@ function createBgTaskPanelUI(options) {
       nameEl.className = 'bg-task-name';
       nameEl.textContent = task.name;
 
-      // 工具调用标签
+      // 工具调用标签 / 重试倒计时
       const toolBadgeEl = documentRef.createElement('span');
       toolBadgeEl.className = 'bg-task-tool-badge';
-      if (task.latestToolCall) {
+      if (task.status === 'retrying' && task.retryDelay > 0) {
+        // 重试等待中：显示倒计时
+        const retryInfoEl = documentRef.createElement('span');
+        retryInfoEl.className = 'bg-task-retry-info';
+        retryInfoEl.dataset.retryEnd = String(Date.now() + task.retryDelay);
+        retryInfoEl.dataset.retryCount = String(task.retryCount || 1);
+        retryInfoEl.textContent = t('ai.bgTaskRetrying') || `重试中 ${task.retryCount}/5`;
+        toolBadgeEl.appendChild(retryInfoEl);
+      } else if (task.latestToolCall) {
         renderToolBadgeContent(toolBadgeEl, task.latestToolCall);
       }
 
@@ -157,7 +166,7 @@ function createBgTaskPanelUI(options) {
       timeWrap.appendChild(timeEl);
 
       // 已完成/失败任务：添加删除按钮（hover 时显示）
-      if (task.status !== 'running') {
+      if (task.status !== 'running' && task.status !== 'retrying') {
         const deleteBtn = documentRef.createElement('button');
         deleteBtn.className = 'bg-task-delete-btn';
         deleteBtn.innerHTML =
@@ -173,8 +182,8 @@ function createBgTaskPanelUI(options) {
         timeWrap.appendChild(deleteBtn);
       }
 
-      // 取消按钮（仅运行中）
-      if (task.status === 'running') {
+      // 取消按钮（运行中/重试等待中）
+      if (task.status === 'running' || task.status === 'retrying') {
         const cancelBtn = documentRef.createElement('button');
         cancelBtn.className = 'bg-task-cancel-btn';
         cancelBtn.textContent = t('ai.bgTaskCancel') || '取消';
@@ -193,7 +202,7 @@ function createBgTaskPanelUI(options) {
       itemEl.appendChild(timeWrap);
 
       // 点击查看结果（已完成/失败）
-      if (task.status !== 'running') {
+      if (task.status !== 'running' && task.status !== 'retrying') {
         itemEl.classList.add('bg-task-clickable');
         itemEl.addEventListener('click', () => {
           showTaskResult(task);
@@ -202,6 +211,44 @@ function createBgTaskPanelUI(options) {
 
       taskListEl.appendChild(itemEl);
     });
+
+    // 启动重试倒计时更新
+    startRetryCountdown();
+  }
+
+  /**
+   * 更新重试倒计时显示
+   */
+  function startRetryCountdown() {
+    // 清除旧定时器
+    if (retryCountdownTimer) {
+      clearInterval(retryCountdownTimer);
+      retryCountdownTimer = null;
+    }
+
+    const retryEls = taskListEl ? taskListEl.querySelectorAll('.bg-task-retry-info') : [];
+    if (retryEls.length === 0) return;
+
+    retryCountdownTimer = setInterval(() => {
+      let hasActive = false;
+      retryEls.forEach(el => {
+        const retryEnd = parseInt(el.dataset.retryEnd, 10);
+        const retryCount = el.dataset.retryCount || '1';
+        const remaining = Math.max(0, retryEnd - Date.now());
+        if (remaining > 0) {
+          hasActive = true;
+          const sec = Math.ceil(remaining / 1000);
+          el.textContent = `${t('ai.bgTaskRetrying') || '重试中'} ${retryCount}/5 · ${sec}s`;
+        } else {
+          el.textContent = `${t('ai.bgTaskRetrying') || '重试中'} ${retryCount}/5`;
+        }
+      });
+
+      if (!hasActive) {
+        clearInterval(retryCountdownTimer);
+        retryCountdownTimer = null;
+      }
+    }, 500);
   }
 
   /**

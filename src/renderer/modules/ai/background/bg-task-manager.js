@@ -48,7 +48,10 @@ function createBgTaskManager(options = {}) {
       completedAt: null,
       hiddenWebviewIds: [],
       abortController: null,
-      latestToolCall: null
+      latestToolCall: null,
+      retryCount: 0,
+      retryDelay: 0,
+      retryTimer: null
     };
     tasks.set(id, task);
     if (typeof onTaskStatusChange === 'function') {
@@ -106,11 +109,51 @@ function createBgTaskManager(options = {}) {
     task.status = 'error';
     task.result = '已取消';
     task.latestToolCall = null;
+    task.retryCount = 0;
+    task.retryDelay = 0;
+    if (task.retryTimer) {
+      clearTimeout(task.retryTimer);
+      task.retryTimer = null;
+    }
     task.completedAt = Date.now();
     if (typeof onTaskStatusChange === 'function') {
       onTaskStatusChange(task);
     }
     saveTasks();
+  }
+
+  /**
+   * 设置任务为重试等待状态
+   * @param {string} taskId - 任务 ID
+   * @param {number} retryCount - 当前重试次数（1~5）
+   * @param {number} delay - 等待毫秒数
+   */
+  function setRetrying(taskId, retryCount, delay) {
+    const task = tasks.get(taskId);
+    if (!task) return;
+    task.status = 'retrying';
+    task.retryCount = retryCount;
+    task.retryDelay = delay;
+    task.completedAt = null;
+    task.result = null;
+    task.latestToolCall = null;
+    if (typeof onTaskStatusChange === 'function') {
+      onTaskStatusChange(task);
+    }
+  }
+
+  /**
+   * 将重试等待中的任务重置为运行中
+   * @param {string} taskId - 任务 ID
+   */
+  function resetToRunning(taskId) {
+    const task = tasks.get(taskId);
+    if (!task) return;
+    task.status = 'running';
+    task.retryDelay = 0;
+    if (typeof onTaskStatusChange === 'function') {
+      onTaskStatusChange(task);
+    }
   }
 
   /**
@@ -207,7 +250,7 @@ function createBgTaskManager(options = {}) {
   function getRunningCount() {
     let count = 0;
     tasks.forEach(task => {
-      if (task.status === 'running') count++;
+      if (task.status === 'running' || task.status === 'retrying') count++;
     });
     return count;
   }
@@ -235,7 +278,8 @@ function createBgTaskManager(options = {}) {
       result: task.result,
       createdAt: task.createdAt,
       completedAt: task.completedAt,
-      latestToolCall: task.latestToolCall
+      latestToolCall: task.latestToolCall,
+      retryCount: task.retryCount || 0
     };
   }
 
@@ -263,8 +307,8 @@ function createBgTaskManager(options = {}) {
     const saved = store.get(STORE_KEY);
     if (!Array.isArray(saved)) return;
     saved.forEach(data => {
-      // running 任务在重启后标记为中断
-      if (data.status === 'running') {
+      // running/retrying 任务在重启后标记为中断
+      if (data.status === 'running' || data.status === 'retrying') {
         data.status = 'error';
         data.result = '应用重启，任务中断';
         data.completedAt = data.completedAt || Date.now();
@@ -273,7 +317,10 @@ function createBgTaskManager(options = {}) {
       const task = {
         ...data,
         hiddenWebviewIds: [],
-        abortController: null
+        abortController: null,
+        retryCount: data.retryCount || 0,
+        retryDelay: 0,
+        retryTimer: null
       };
       tasks.set(task.id, task);
       // 恢复计数器，避免 ID 冲突
@@ -293,6 +340,8 @@ function createBgTaskManager(options = {}) {
     completeTask,
     failTask,
     cancelTask,
+    setRetrying,
+    resetToRunning,
     updateLatestToolCall,
     registerHiddenWebview,
     getHiddenWebviewIds,

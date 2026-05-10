@@ -317,7 +317,8 @@
     "bgTaskCancel": "取消",
     "bgTaskCompleted": "后台任务已完成",
     "bgTaskFailed": "后台任务执行失败",
-    "bgTaskNoResult": "无结果"
+    "bgTaskNoResult": "无结果",
+    "bgTaskRetrying": "重试中"
   },
   "newTab": {
     "searchPlaceholder": "搜索或输入 URL...",

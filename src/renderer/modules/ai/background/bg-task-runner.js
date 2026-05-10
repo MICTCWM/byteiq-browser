@@ -305,7 +305,21 @@ function createBgTaskRunner(options) {
   }
 
   /**
-   * 运行后台任务
+   * 带中断检查的等待
+   * @param {Object} abortController - abort 控制器
+   * @param {number} ms - 等待毫秒数
+   */
+  async function waitWithAbortCheck(abortController, ms) {
+    const end = Date.now() + ms;
+    while (Date.now() < end && !abortController.aborted) {
+      const remaining = end - Date.now();
+      await new Promise(r => setTimeout(r, Math.min(500, remaining)));
+    }
+  }
+
+  /**
+   * 运行后台任务（含自动重试）
+   * 重试策略：第1次5s，第2次10s，每次+5s，最多5次
    * @param {string} userText - 用户输入文本
    * @returns {Promise<void>}
    */
@@ -337,130 +351,161 @@ function createBgTaskRunner(options) {
     ];
 
     const contextSize = getModelContextSize(store);
-    let maxIterations = 30;
-    let textOnlyCount = 0;
-    const previousMessages = new Set();
-    const completionKeywords = [
-      '任务完成',
-      '总结如下',
-      '已完成',
-      '结束',
-      '完毕',
-      '完成了',
-      'summary',
-      'completed',
-      'finished',
-      'end'
-    ];
+    const MAX_RETRIES = 5;
+    const BASE_RETRY_DELAY = 5000;
+    let retryCount = 0;
+    let succeeded = false;
 
-    try {
-      while (!abortController.aborted && maxIterations > 0) {
-        maxIterations--;
+    while (!succeeded && retryCount <= MAX_RETRIES && !abortController.aborted) {
+      let maxIterations = 30;
+      let textOnlyCount = 0;
+      const previousMessages = new Set();
+      const completionKeywords = [
+        '任务完成',
+        '总结如下',
+        '已完成',
+        '结束',
+        '完毕',
+        '完成了',
+        'summary',
+        'completed',
+        'finished',
+        'end'
+      ];
 
-        // 智能动态截断
-        const maxLiveMessages = Math.max(12, Math.floor((contextSize * 0.8) / 500));
-        agentMessageHistory = promptBuilder.truncateLiveHistory(
-          agentMessageHistory,
-          maxLiveMessages
-        );
+      try {
+        while (!abortController.aborted && maxIterations > 0) {
+          maxIterations--;
 
-        const result = await sendBgAgentRequest(agentMessageHistory, task.id);
-
-        if (!result?.success) {
-          throw new Error(result?.error || 'Background agent request failed');
-        }
-
-        if (result.type === 'message') {
-          // 文本解析工具调用（fallback 模式）
-          if (result.usedToolsFallback && result.content) {
-            const parsedToolCalls = parseToolCallsFromText(result.content);
-            if (parsedToolCalls && parsedToolCalls.length > 0) {
-              const processedResult = {
-                success: true,
-                type: 'tool_calls',
-                toolCalls: parsedToolCalls,
-                reasoningContent: result.reasoningContent || '',
-                content: removeToolCallTextFromContent(result.content),
-                taskId: result.taskId
-              };
-              // 跳转到 tool_calls 处理
-              await handleBgToolCalls(processedResult, agentMessageHistory, task);
-              continue;
-            }
-          }
-
-          // 纯文本回复
-          agentMessageHistory.push({ role: 'assistant', content: result.content });
-
-          if (!result.content || result.content.trim().length === 0) {
-            break;
-          }
-
-          const content = result.content.trim().toLowerCase();
-          const isDuplicate = previousMessages.has(content);
-          previousMessages.add(content);
-          const containsCompletionKeyword = completionKeywords.some(keyword =>
-            content.includes(keyword.toLowerCase())
+          // 智能动态截断
+          const maxLiveMessages = Math.max(12, Math.floor((contextSize * 0.8) / 500));
+          agentMessageHistory = promptBuilder.truncateLiveHistory(
+            agentMessageHistory,
+            maxLiveMessages
           );
 
-          textOnlyCount++;
+          const result = await sendBgAgentRequest(agentMessageHistory, task.id);
 
-          // 智能终止策略
-          if (isDuplicate || containsCompletionKeyword || textOnlyCount >= 5) {
-            // 将最后的文本作为结果
-            taskManager.completeTask(task.id, result.content);
-            break;
+          if (!result?.success) {
+            throw new Error(result?.error || 'Background agent request failed');
           }
+
+          if (result.type === 'message') {
+            // 文本解析工具调用（fallback 模式）
+            if (result.usedToolsFallback && result.content) {
+              const parsedToolCalls = parseToolCallsFromText(result.content);
+              if (parsedToolCalls && parsedToolCalls.length > 0) {
+                const processedResult = {
+                  success: true,
+                  type: 'tool_calls',
+                  toolCalls: parsedToolCalls,
+                  reasoningContent: result.reasoningContent || '',
+                  content: removeToolCallTextFromContent(result.content),
+                  taskId: result.taskId
+                };
+                // 跳转到 tool_calls 处理
+                await handleBgToolCalls(processedResult, agentMessageHistory, task);
+                continue;
+              }
+            }
+
+            // 纯文本回复
+            agentMessageHistory.push({ role: 'assistant', content: result.content });
+
+            if (!result.content || result.content.trim().length === 0) {
+              break;
+            }
+
+            const content = result.content.trim().toLowerCase();
+            const isDuplicate = previousMessages.has(content);
+            previousMessages.add(content);
+            const containsCompletionKeyword = completionKeywords.some(keyword =>
+              content.includes(keyword.toLowerCase())
+            );
+
+            textOnlyCount++;
+
+            // 智能终止策略
+            if (isDuplicate || containsCompletionKeyword || textOnlyCount >= 5) {
+              // 将最后的文本作为结果
+              taskManager.completeTask(task.id, result.content);
+              break;
+            }
+            continue;
+          }
+
+          if (result.type === 'tool_calls') {
+            textOnlyCount = 0;
+            previousMessages.clear();
+            await handleBgToolCalls(result, agentMessageHistory, task);
+
+            if (task.status !== 'running') break;
+          }
+        }
+
+        // 循环正常结束视为成功
+        succeeded = true;
+      } catch (error) {
+        console.error('[bg-task-runner] Error:', error);
+
+        const errMsg = error && error.message ? String(error.message) : '未知错误';
+
+        // token 超限错误：自动截断历史重试（不计入重试次数）
+        if (
+          (errMsg.includes('context_length') ||
+            errMsg.includes('max_tokens') ||
+            errMsg.includes('token limit') ||
+            errMsg.includes('too many tokens') ||
+            errMsg.includes('maximum context') ||
+            errMsg.includes('context window')) &&
+          agentMessageHistory.length > 6
+        ) {
+          const systemMsg = agentMessageHistory[0];
+          const minKeep = Math.max(4, Math.floor((contextSize * 0.3) / 500));
+          const recentMessages = agentMessageHistory.slice(-minKeep);
+          agentMessageHistory = [systemMsg, ...recentMessages];
+          // 不标记失败，继续外层循环重跑
           continue;
         }
 
-        if (result.type === 'tool_calls') {
-          textOnlyCount = 0;
-          previousMessages.clear();
-          await handleBgToolCalls(result, agentMessageHistory, task);
+        // 其他错误：判断是否可重试
+        if (retryCount < MAX_RETRIES && !abortController.aborted) {
+          retryCount++;
+          const delay = BASE_RETRY_DELAY * retryCount;
 
-          if (task.status !== 'running') break;
+          // 设置重试等待状态
+          taskManager.setRetrying(task.id, retryCount, delay);
+
+          // 等待重试延迟
+          await waitWithAbortCheck(abortController, delay);
+
+          if (abortController.aborted) break;
+
+          // 重置为运行中，继续外层循环
+          taskManager.resetToRunning(task.id);
+          continue;
         }
-      }
-    } catch (error) {
-      console.error('[bg-task-runner] Error:', error);
 
-      // token 超限错误：自动截断历史重试一次
-      const errMsg = error && error.message ? String(error.message) : '';
-      if (
-        (errMsg.includes('context_length') ||
-          errMsg.includes('max_tokens') ||
-          errMsg.includes('token limit') ||
-          errMsg.includes('too many tokens') ||
-          errMsg.includes('maximum context') ||
-          errMsg.includes('context window')) &&
-        agentMessageHistory.length > 6
-      ) {
-        const systemMsg = agentMessageHistory[0];
-        const minKeep = Math.max(4, Math.floor((contextSize * 0.3) / 500));
-        const recentMessages = agentMessageHistory.slice(-minKeep);
-        agentMessageHistory = [systemMsg, ...recentMessages];
-        // 重试
-        maxIterations = Math.min(maxIterations, 10);
-        // 不标记失败，继续循环
-      } else {
-        taskManager.failTask(task.id, errMsg);
+        // 重试次数耗尽或已取消，标记最终失败
+        const retryInfo = retryCount > 0 ? `（已重试${retryCount}次）` : '';
+        taskManager.failTask(task.id, errMsg + retryInfo);
         if (typeof onTaskError === 'function') {
           onTaskError(task, errMsg);
         }
+        break;
       }
-    } finally {
-      // 清理资源
-      taskManager.cleanupTask(task.id, documentRef);
+    }
 
-      // 如果任务仍在运行（循环正常结束但未标记完成），标记完成
-      if (task.status === 'running') {
-        taskManager.completeTask(task.id, task.result || '');
-      }
+    // 清理资源
+    taskManager.cleanupTask(task.id, documentRef);
 
-      if (typeof onTaskComplete === 'function') {
-        onTaskComplete(task);
-      }
+    // 如果任务仍在运行（循环正常结束但未标记完成），标记完成
+    if (task.status === 'running') {
+      taskManager.completeTask(task.id, task.result || '');
+    }
+
+    if (typeof onTaskComplete === 'function') {
+      onTaskComplete(task);
     }
   }
 
