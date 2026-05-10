@@ -252,6 +252,13 @@ function createAiToolbar(options) {
         closeAllMenus();
       }
     });
+
+    window.addEventListener('ai-profile-applied', () => {
+      updateModelButton();
+      if (modelMenu && modelMenu.style.display !== 'none') {
+        loadModelList();
+      }
+    });
   }
 
   /**

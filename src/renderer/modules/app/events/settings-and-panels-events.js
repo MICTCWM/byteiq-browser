@@ -22,6 +22,9 @@ function bindSettingsAndPanelEvents(options) {
 
   // 绑定AI设置事件
   const aiSettingsHelpers = bindAiSettingsEvents({
+    aiProfileSelect: options.aiProfileSelect,
+    aiProfileAddBtn: options.aiProfileAddBtn,
+    aiProfileApplyBtn: options.aiProfileApplyBtn,
     aiApiKeyInput: options.aiApiKeyInput,
     aiEndpointInput: options.aiEndpointInput,
     aiModelIdInput: options.aiModelIdInput,
@@ -163,26 +166,34 @@ function bindSettingsAndPanelEvents(options) {
         }
         // 加载 AI 设置（先迁移旧格式数据）
         migrateCandidateModels(store);
-        if (options.aiEndpointInput) {
-          options.aiEndpointInput.value = store.get('settings.aiEndpoint', '');
-        }
-        if (options.aiApiKeyInput) {
-          options.aiApiKeyInput.value = store.get('settings.aiApiKey', '');
-        }
-        if (options.aiRequestTypeSelect) {
-          options.aiRequestTypeSelect.value = store.get('settings.aiRequestType', 'openai-chat');
-        }
-        if (options.aiModelIdInput) {
-          options.aiModelIdInput.value = store.get('settings.aiModelId', 'gpt-3.5-turbo');
-        }
-        if (options.aiModelListSelect) {
-          aiSettingsHelpers.syncAiModelSelection();
-          if (options.aiModelListSelect.options.length <= 1) {
-            aiSettingsHelpers.setAiModelStatus(options.t('panels.settings.ai.waitingFetch'), '');
+        if (
+          options.aiProfileSelect &&
+          aiSettingsHelpers &&
+          typeof aiSettingsHelpers.initAiProfilesUi === 'function'
+        ) {
+          aiSettingsHelpers.initAiProfilesUi();
+        } else {
+          if (options.aiEndpointInput) {
+            options.aiEndpointInput.value = store.get('settings.aiEndpoint', '');
           }
-        }
-        if (options.aiModelCandidatesContainer) {
-          aiSettingsHelpers.renderCandidateModels();
+          if (options.aiApiKeyInput) {
+            options.aiApiKeyInput.value = store.get('settings.aiApiKey', '');
+          }
+          if (options.aiRequestTypeSelect) {
+            options.aiRequestTypeSelect.value = store.get('settings.aiRequestType', 'openai-chat');
+          }
+          if (options.aiModelIdInput) {
+            options.aiModelIdInput.value = store.get('settings.aiModelId', 'gpt-3.5-turbo');
+          }
+          if (options.aiModelListSelect) {
+            aiSettingsHelpers.syncAiModelSelection();
+            if (options.aiModelListSelect.options.length <= 1) {
+              aiSettingsHelpers.setAiModelStatus(options.t('panels.settings.ai.waitingFetch'), '');
+            }
+          }
+          if (options.aiModelCandidatesContainer) {
+            aiSettingsHelpers.renderCandidateModels();
+          }
         }
         if (options.aiContextSizeInput) {
           const ctxSize = store.get('settings.aiContextSize', 8192);

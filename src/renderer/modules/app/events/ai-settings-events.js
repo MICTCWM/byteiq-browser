@@ -10,12 +10,20 @@
  */
 const {
   getCandidateModelList,
+  ensureAiProfiles,
+  getAiProfiles,
+  addAiProfile,
+  upsertAiProfile,
+  applyAiProfile,
   setModelContextSize,
   DEFAULT_CONTEXT_SIZE
 } = require('../../ai/context/ai-model-context-config');
 
 function bindAiSettingsEvents(deps) {
   const {
+    aiProfileSelect,
+    aiProfileAddBtn,
+    aiProfileApplyBtn,
     aiApiKeyInput,
     aiEndpointInput,
     aiModelIdInput,
@@ -49,6 +57,98 @@ function bindAiSettingsEvents(deps) {
   } = deps;
 
   const document = deps.documentRef;
+
+  function getActiveProfileId() {
+    return store ? store.get('settings.activeAiProfileId', '') : '';
+  }
+
+  function readProfileFromUi(profileId) {
+    const defaultCtx = store.get('settings.aiContextSize', DEFAULT_CONTEXT_SIZE);
+    const candidates = getCandidateModels();
+
+    return {
+      id: profileId,
+      name: profileId,
+      endpoint: aiEndpointInput ? aiEndpointInput.value.trim() : '',
+      apiKey: aiApiKeyInput ? aiApiKeyInput.value.trim() : '',
+      requestType: aiRequestTypeSelect ? aiRequestTypeSelect.value : 'openai-chat',
+      modelId: aiModelIdInput ? aiModelIdInput.value.trim() : 'gpt-3.5-turbo',
+      modelCandidates: (Array.isArray(candidates) ? candidates : [])
+        .map(item => {
+          if (!item) return null;
+          const id = typeof item.id === 'string' ? item.id.trim() : '';
+          if (!id) return null;
+          const contextSize =
+            typeof item.contextSize === 'number' && item.contextSize >= 1024
+              ? item.contextSize
+              : defaultCtx;
+          return { id, contextSize };
+        })
+        .filter(Boolean)
+    };
+  }
+
+  function fillUiFromProfile(profile) {
+    if (!profile) return;
+    if (aiEndpointInput) aiEndpointInput.value = profile.endpoint || '';
+    if (aiApiKeyInput) aiApiKeyInput.value = profile.apiKey || '';
+    if (aiRequestTypeSelect) aiRequestTypeSelect.value = profile.requestType || 'openai-chat';
+    if (aiModelIdInput) aiModelIdInput.value = profile.modelId || 'gpt-3.5-turbo';
+
+    if (store) {
+      store.set(
+        'settings.aiModelCandidates',
+        Array.isArray(profile.modelCandidates) ? profile.modelCandidates : []
+      );
+    }
+    renderCandidateModels();
+
+    if (aiModelListSelect) {
+      syncAiModelSelection();
+      if (aiModelListSelect.options.length <= 1) {
+        setAiModelStatus(t('panels.settings.ai.waitingFetch'), '');
+      }
+    }
+  }
+
+  function renderProfilesSelect(profiles, activeId) {
+    if (!aiProfileSelect) return;
+    aiProfileSelect.innerHTML = '';
+
+    (Array.isArray(profiles) ? profiles : []).forEach(profile => {
+      const option = document.createElement('option');
+      option.value = profile.id;
+      option.textContent = profile.name || '配置';
+      aiProfileSelect.appendChild(option);
+    });
+
+    if (activeId) {
+      aiProfileSelect.value = activeId;
+    }
+  }
+
+  function initAiProfilesUi() {
+    if (!store || !aiProfileSelect) return;
+
+    const profiles = ensureAiProfiles(store);
+    const activeId = getActiveProfileId() || profiles[0]?.id;
+    renderProfilesSelect(profiles, activeId);
+
+    const activeProfile = profiles.find(p => p.id === activeId) || profiles[0];
+    if (activeProfile) {
+      fillUiFromProfile(activeProfile);
+    }
+
+    try {
+      if (activeId) {
+        window.dispatchEvent(
+          new CustomEvent('ai-profile-applied', { detail: { profileId: activeId } })
+        );
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   function getCandidateModels() {
     return getCandidateModelList(store);
@@ -197,7 +297,14 @@ function bindAiSettingsEvents(deps) {
   }
 
   async function refreshAiModelList() {
-    if (!aiModelRefreshBtn || !aiModelListSelect || !aiEndpointInput || !aiApiKeyInput || !aiRequestTypeSelect) return;
+    if (
+      !aiModelRefreshBtn ||
+      !aiModelListSelect ||
+      !aiEndpointInput ||
+      !aiApiKeyInput ||
+      !aiRequestTypeSelect
+    )
+      return;
 
     const endpoint = aiEndpointInput.value.trim();
     const apiKey = aiApiKeyInput.value.trim();
@@ -278,6 +385,74 @@ function bindAiSettingsEvents(deps) {
     aiModelIdInput.addEventListener('change', () => {
       store.set('settings.aiModelId', aiModelIdInput.value);
       syncAiModelSelection();
+    });
+  }
+
+  if (aiProfileSelect) {
+    aiProfileSelect.addEventListener('change', () => {
+      if (!store) return;
+      const profiles = getAiProfiles(store);
+      const id = aiProfileSelect.value;
+      const profile = profiles.find(p => p.id === id);
+      if (!profile) return;
+      store.set('settings.activeAiProfileId', id);
+      fillUiFromProfile(profile);
+    });
+  }
+
+  if (aiProfileAddBtn) {
+    aiProfileAddBtn.addEventListener('click', () => {
+      if (!store) return;
+      const profile = addAiProfile(store);
+      const profiles = getAiProfiles(store);
+      renderProfilesSelect(profiles, profile?.id);
+      if (profile) {
+        fillUiFromProfile(profile);
+      }
+    });
+  }
+
+  if (aiProfileApplyBtn) {
+    aiProfileApplyBtn.addEventListener('click', () => {
+      if (!store) return;
+      const activeId = aiProfileSelect ? aiProfileSelect.value : getActiveProfileId();
+      if (!activeId) return;
+
+      const uiProfile = readProfileFromUi(activeId);
+      const profiles = getAiProfiles(store);
+      const currentName = profiles.find(p => p.id === activeId)?.name;
+      uiProfile.name = currentName || '配置';
+      upsertAiProfile(store, uiProfile);
+      const applied = applyAiProfile(store, activeId);
+      if (!applied) return;
+
+      if (aiProfileSelect) {
+        const nextProfiles = getAiProfiles(store);
+        renderProfilesSelect(nextProfiles, activeId);
+      }
+
+      if (aiModelIdInput) {
+        aiModelIdInput.value = store.get('settings.aiModelId', 'gpt-3.5-turbo');
+      }
+      if (aiEndpointInput) {
+        aiEndpointInput.value = store.get('settings.aiEndpoint', '');
+      }
+      if (aiApiKeyInput) {
+        aiApiKeyInput.value = store.get('settings.aiApiKey', '');
+      }
+      if (aiRequestTypeSelect) {
+        aiRequestTypeSelect.value = store.get('settings.aiRequestType', 'openai-chat');
+      }
+
+      renderCandidateModels();
+
+      try {
+        window.dispatchEvent(
+          new CustomEvent('ai-profile-applied', { detail: { profileId: activeId } })
+        );
+      } catch {
+        // ignore
+      }
     });
   }
 
@@ -462,7 +637,8 @@ function bindAiSettingsEvents(deps) {
     updateAiModelOptions,
     syncAiModelSelection,
     refreshAiModelList,
-    renderCandidateModels
+    renderCandidateModels,
+    initAiProfilesUi
   };
 }
 

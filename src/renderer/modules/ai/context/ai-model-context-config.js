@@ -7,6 +7,189 @@
 
 const DEFAULT_CONTEXT_SIZE = 8192;
 
+const AI_PROFILES_SCHEMA_VERSION = 1;
+
+function normalizeCandidateModels(list, fallbackContextSize) {
+  const defaultCtx =
+    typeof fallbackContextSize === 'number' && fallbackContextSize >= 1024
+      ? fallbackContextSize
+      : DEFAULT_CONTEXT_SIZE;
+
+  const seen = new Set();
+  const normalized = (Array.isArray(list) ? list : [])
+    .map(item => {
+      if (!item) return null;
+      if (typeof item === 'string') {
+        const id = item.trim();
+        if (!id) return null;
+        return { id, contextSize: defaultCtx };
+      }
+      if (typeof item === 'object') {
+        const id = typeof item.id === 'string' ? item.id.trim() : '';
+        if (!id) return null;
+        const contextSize =
+          typeof item.contextSize === 'number' && item.contextSize >= 1024
+            ? item.contextSize
+            : defaultCtx;
+        return { id, contextSize };
+      }
+      return null;
+    })
+    .filter(Boolean)
+    .filter(item => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+
+  return normalized;
+}
+
+function generateProfileId(existingIds) {
+  const existing = existingIds instanceof Set ? existingIds : new Set(existingIds || []);
+  for (let i = 0; i < 5; i++) {
+    const id = `profile-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    if (!existing.has(id)) return id;
+  }
+  return `profile-${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random()
+    .toString(16)
+    .slice(2)}`;
+}
+
+function buildProfileFromFlatSettings(store, name, id) {
+  const endpoint = store.get('settings.aiEndpoint', '');
+  const apiKey = store.get('settings.aiApiKey', '');
+  const requestType = store.get('settings.aiRequestType', 'openai-chat');
+  const modelId = store.get('settings.aiModelId', 'gpt-3.5-turbo');
+  const defaultCtx = store.get('settings.aiContextSize', DEFAULT_CONTEXT_SIZE);
+  const candidates = normalizeCandidateModels(
+    store.get('settings.aiModelCandidates', []),
+    defaultCtx
+  );
+
+  return {
+    id,
+    name: name || '默认配置',
+    endpoint,
+    apiKey,
+    requestType,
+    modelId,
+    modelCandidates: candidates
+  };
+}
+
+function ensureAiProfiles(store) {
+  if (!store) return [];
+
+  const schemaVersion = store.get('settings.aiProfilesSchemaVersion', 0);
+  let profiles = store.get('settings.aiProfiles', []);
+
+  if (!Array.isArray(profiles) || profiles.length === 0) {
+    const id = generateProfileId();
+    profiles = [buildProfileFromFlatSettings(store, '默认配置', id)];
+    store.set('settings.aiProfiles', profiles);
+    store.set('settings.aiProfilesSchemaVersion', AI_PROFILES_SCHEMA_VERSION);
+    store.set('settings.activeAiProfileId', id);
+    return profiles;
+  }
+
+  const normalized = profiles
+    .filter(p => p && typeof p.id === 'string' && p.id.trim())
+    .map(p => {
+      const defaultCtx = store.get('settings.aiContextSize', DEFAULT_CONTEXT_SIZE);
+      return {
+        id: p.id,
+        name: typeof p.name === 'string' && p.name.trim() ? p.name.trim() : '配置',
+        endpoint: typeof p.endpoint === 'string' ? p.endpoint : '',
+        apiKey: typeof p.apiKey === 'string' ? p.apiKey : '',
+        requestType: typeof p.requestType === 'string' ? p.requestType : 'openai-chat',
+        modelId: typeof p.modelId === 'string' ? p.modelId : 'gpt-3.5-turbo',
+        modelCandidates: normalizeCandidateModels(p.modelCandidates || [], defaultCtx)
+      };
+    });
+
+  if (normalized.length === 0) {
+    const id = generateProfileId();
+    const fallback = [buildProfileFromFlatSettings(store, '默认配置', id)];
+    store.set('settings.aiProfiles', fallback);
+    store.set('settings.aiProfilesSchemaVersion', AI_PROFILES_SCHEMA_VERSION);
+    store.set('settings.activeAiProfileId', id);
+    return fallback;
+  }
+
+  store.set('settings.aiProfiles', normalized);
+  if (schemaVersion !== AI_PROFILES_SCHEMA_VERSION) {
+    store.set('settings.aiProfilesSchemaVersion', AI_PROFILES_SCHEMA_VERSION);
+  }
+  const activeId = store.get('settings.activeAiProfileId', '');
+  if (!activeId || !normalized.some(p => p.id === activeId)) {
+    store.set('settings.activeAiProfileId', normalized[0].id);
+  }
+  return normalized;
+}
+
+function getAiProfiles(store) {
+  return ensureAiProfiles(store);
+}
+
+function upsertAiProfile(store, profile) {
+  if (!store || !profile || typeof profile !== 'object') return null;
+  const profiles = ensureAiProfiles(store);
+  const next = profiles.slice();
+  const idx = next.findIndex(p => p.id === profile.id);
+  const defaultCtx = store.get('settings.aiContextSize', DEFAULT_CONTEXT_SIZE);
+  const merged = {
+    id: profile.id,
+    name: typeof profile.name === 'string' && profile.name.trim() ? profile.name.trim() : '配置',
+    endpoint: typeof profile.endpoint === 'string' ? profile.endpoint : '',
+    apiKey: typeof profile.apiKey === 'string' ? profile.apiKey : '',
+    requestType: typeof profile.requestType === 'string' ? profile.requestType : 'openai-chat',
+    modelId: typeof profile.modelId === 'string' ? profile.modelId : 'gpt-3.5-turbo',
+    modelCandidates: normalizeCandidateModels(profile.modelCandidates || [], defaultCtx)
+  };
+
+  if (idx >= 0) {
+    next[idx] = merged;
+  } else {
+    next.push(merged);
+  }
+  store.set('settings.aiProfiles', next);
+  return merged;
+}
+
+function addAiProfile(store, partialProfile) {
+  if (!store) return null;
+  const profiles = ensureAiProfiles(store);
+  const existingIds = new Set(profiles.map(p => p.id));
+  const id = generateProfileId(existingIds);
+  const defaultProfile = buildProfileFromFlatSettings(
+    store,
+    partialProfile?.name || `配置 ${profiles.length + 1}`,
+    id
+  );
+
+  const next = profiles.concat([defaultProfile]);
+  store.set('settings.aiProfiles', next);
+  store.set('settings.activeAiProfileId', id);
+  return defaultProfile;
+}
+
+function applyAiProfile(store, profileId) {
+  if (!store || !profileId) return null;
+  const profiles = ensureAiProfiles(store);
+  const profile = profiles.find(p => p.id === profileId);
+  if (!profile) return null;
+
+  store.set('settings.activeAiProfileId', profile.id);
+  store.set('settings.aiEndpoint', profile.endpoint || '');
+  store.set('settings.aiApiKey', profile.apiKey || '');
+  store.set('settings.aiRequestType', profile.requestType || 'openai-chat');
+  store.set('settings.aiModelId', profile.modelId || 'gpt-3.5-turbo');
+  store.set('settings.aiModelCandidates', profile.modelCandidates || []);
+
+  return profile;
+}
+
 /**
  * 迁移旧格式候选模型数据（字符串数组 → 对象数组）
  * @param {object} store - electron-store 实例
@@ -92,6 +275,13 @@ function setModelContextSize(store, modelId, contextSize) {
 
 module.exports = {
   DEFAULT_CONTEXT_SIZE,
+  AI_PROFILES_SCHEMA_VERSION,
+  normalizeCandidateModels,
+  ensureAiProfiles,
+  getAiProfiles,
+  upsertAiProfile,
+  addAiProfile,
+  applyAiProfile,
   migrateCandidateModels,
   getCandidateModelList,
   getModelContextSize,

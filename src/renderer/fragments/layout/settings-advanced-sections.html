@@ -3,6 +3,18 @@
                     <h3 data-i18n="panels.settings.ai.title">AI设置</h3>
                     <div class="setting-item">
                         <div class="setting-info">
+                            <label>模型配置</label>
+                            <div class="setting-desc">管理多套 AI 端点/密钥/候选模型配置</div>
+                        </div>
+                        <div class="setting-controls">
+                            <select id="ai-profile-select" class="setting-select"></select>
+                            <input type="text" id="ai-profile-name-input" placeholder="配置名称" style="width:120px">
+                            <button id="ai-profile-add-btn" class="setting-action-btn" title="新增">+</button>
+                            <button id="ai-profile-apply-btn" class="setting-action-btn primary">应用</button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
                             <label data-i18n="panels.settings.ai.endpoint">API端点URL</label>
                             <div class="setting-desc" data-i18n="panels.settings.ai.endpointDesc">配置AI API的基础URL地址</div>
                         </div>

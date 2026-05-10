@@ -74,6 +74,9 @@ const {
   extensionsAddBtn,
   extensionsRefreshBtn,
   extensionsEmpty,
+  aiProfileSelect,
+  aiProfileAddBtn,
+  aiProfileApplyBtn,
   aiEndpointInput,
   aiApiKeyInput,
   aiRequestTypeSelect,
@@ -447,6 +450,9 @@ function refreshCurrentPage() {
 }
 
 bindSettingsAndPanelEvents({
+  aiProfileSelect,
+  aiProfileAddBtn,
+  aiProfileApplyBtn,
   aiApiKeyInput,
   aiEndpointInput,
   aiModelListSelect,
