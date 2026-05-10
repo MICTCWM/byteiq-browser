@@ -95,6 +95,10 @@ function setupWebviewWindowHandler() {
       return;
     }
 
+    // 禁用后台节流，确保离屏/后台 webview 能正常加载页面和执行 JavaScript
+    // 浏览器应用中用户期望后台标签页继续工作
+    contents.setBackgroundThrottling(false);
+
     // 拦截webview中的窗口打开请求
     contents.setWindowOpenHandler(({ url }) => {
       try {
