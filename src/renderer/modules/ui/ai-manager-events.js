@@ -218,9 +218,6 @@ function createEventManager(options) {
         bgTaskRunner.runBackgroundTask(text).catch(err => {
           console.error('[ai-manager-events] Background task failed:', err);
         });
-        if (showToast) {
-          showToast(t('ai.bgTaskSent') || '已发送到后台执行', 'info');
-        }
       });
     }
 
