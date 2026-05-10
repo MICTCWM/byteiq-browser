@@ -13,7 +13,7 @@
     --ai-accent-strong: #3b6fff;
     --ai-accent-soft: rgba(17, 81, 255, 0.15);
     --ai-bubble-ai: #2a2a2a;
-    --ai-bubble-user: #111111;
+    --ai-bubble-user: #1151ff;
     --ai-bubble-user-text: #ffffff;
     background: var(--ai-surface);
     border-left-color: var(--ai-border);

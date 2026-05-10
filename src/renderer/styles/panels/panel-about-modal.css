@@ -232,12 +232,12 @@ body.dark-mode .extension-error {
 }
 
 .modal-btn-primary {
-    background: var(--brand-ink);
+    background: var(--brand-primary);
     color: var(--brand-on-primary);
 }
 
 .modal-btn-primary:hover {
-    background: var(--brand-charcoal);
+    background: var(--brand-primary-hover);
 }
 
 .modal-btn-danger {

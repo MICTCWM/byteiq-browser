@@ -18,6 +18,10 @@
     --brand-info: #1151ff;
     --brand-info-deep: #0034e3;
 
+    /* 交互色 - 按钮背景、进度条、焦点边框等 */
+    --brand-primary: #1151ff;
+    --brand-primary-hover: #0034e3;
+
     /* 圆角 */
     --brand-rounded-none: 0px;
     --brand-rounded-sm: 18px;

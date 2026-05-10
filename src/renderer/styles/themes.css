@@ -174,9 +174,9 @@ body.dark-mode .chat-message.ai {
 }
 
 body.dark-mode .chat-message.user {
-    background: var(--brand-ink);
+    background: var(--brand-primary);
     color: var(--brand-on-primary);
-    border: 1px solid #333333;
+    border: 1px solid var(--brand-primary);
 }
 
 body.dark-mode .ai-input-area {
@@ -191,12 +191,12 @@ body.dark-mode .ai-input-area input {
 }
 
 body.dark-mode .ai-input-area button {
-    background: var(--brand-ink);
+    background: var(--brand-primary);
     color: var(--brand-on-primary);
 }
 
 body.dark-mode .ai-input-area button:hover {
-    background: #333333;
+    background: var(--brand-primary-hover);
 }
 
 body.dark-mode .panel-search input {
@@ -222,7 +222,7 @@ body.dark-mode .toggle-slider {
 }
 
 body.dark-mode .toggle-switch input:checked + .toggle-slider {
-    background-color: var(--brand-on-primary);
+    background-color: var(--brand-primary);
 }
 
 body.dark-mode .tab-context-menu,
@@ -326,13 +326,13 @@ body.dark-mode .setting-action-btn:hover {
 }
 
 body.dark-mode .setting-action-btn.primary {
-    background: var(--brand-on-primary);
-    border-color: var(--brand-on-primary);
-    color: var(--brand-ink);
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: var(--brand-on-primary);
 }
 
 body.dark-mode .setting-action-btn.primary:hover {
-    background: var(--brand-hairline-soft);
+    background: var(--brand-primary-hover);
 }
 
 body.dark-mode .setting-action-btn.danger {
@@ -361,8 +361,8 @@ body.dark-mode .downloads-filters .filter-btn:hover {
 }
 
 body.dark-mode .downloads-filters .filter-btn.active {
-    background: var(--brand-ink);
-    border-color: var(--brand-on-primary);
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
     color: var(--brand-on-primary);
 }
 

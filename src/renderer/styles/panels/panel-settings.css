@@ -95,13 +95,13 @@
     transform: translateY(-50%) scaleY(0);
     width: 3px;
     height: 60%;
-    background: var(--brand-ink);
+    background: var(--brand-primary);
     border-radius: 0 2px 2px 0;
     transition: transform 0.2s ease;
 }
 
 .settings-nav-item:hover {
-    background: var(--brand-ink);
+    background: var(--brand-primary);
 }
 
 .settings-nav-item.active {
@@ -227,8 +227,8 @@
 .setting-item select:focus,
 .setting-item input[type="text"]:focus,
 .setting-item input[type="number"]:focus {
-    border-color: var(--brand-ink);
-    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(17, 81, 255, 0.1);
     outline: none;
 }
 
@@ -282,9 +282,7 @@
 }
 
 .setting-action-btn:hover {
-    background: var(--brand-ink);
-    border-color: var(--brand-stone);
-    transform: translateY(-1px);
+    background: var(--brand-primary-hover);
 }
 
 .setting-action-btn:active {
@@ -292,14 +290,14 @@
 }
 
 .setting-action-btn.primary {
-    background: var(--brand-ink);
-    border-color: var(--brand-ink);
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
     color: var(--brand-on-primary);
 }
 
 .setting-action-btn.primary:hover {
-    background: var(--brand-charcoal);
-    border-color: var(--brand-charcoal);
+    background: var(--brand-primary-hover);
+    border-color: var(--brand-primary-hover);
 }
 
 .setting-action-btn.danger {
@@ -525,8 +523,7 @@
 
 .model-card-ctx-input:focus {
     outline: none;
-    border-color: var(--brand-ink);
-    box-shadow: 0 0 0 1px var(--brand-hairline-soft);
+    border-color: var(--brand-primary);
 }
 
 .model-card-ctx-display {

@@ -23,7 +23,7 @@
 .progress-bar {
     height: 100%;
     width: 0%;
-    background: var(--brand-ink);
+    background: var(--brand-primary);
     transition: width 0.2s, opacity 0.5s;
     opacity: 0;
 }
@@ -180,7 +180,7 @@
 }
 
 .url-bar:focus-within::before {
-    border-color: var(--brand-ink);
+    border-color: var(--brand-primary);
 }
 
 .url-bar input {
@@ -199,7 +199,7 @@
     top: 0;
     left: 0;
     height: 3px;
-    background: var(--brand-ink);
+    background: var(--brand-primary);
     background-size: 200% 100%;
     transition: width 0.2s ease;
     z-index: 9999;
@@ -329,7 +329,7 @@
 
 .advanced-options input[type="number"]:focus {
     outline: none;
-    border-color: var(--brand-ink);
+    border-color: var(--brand-primary);
 }
 
 /* 更多按钮下拉菜单样式 */

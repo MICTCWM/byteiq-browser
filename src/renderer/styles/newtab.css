@@ -38,7 +38,7 @@
 }
 
 .search-box input:focus {
-    border-color: var(--brand-ink);
+    border-color: var(--brand-primary);
 }
 
 .info {

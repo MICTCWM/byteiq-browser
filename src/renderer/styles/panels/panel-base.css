@@ -134,8 +134,8 @@
 }
 
 .downloads-filters .filter-btn.active {
-    background: var(--brand-ink);
-    border-color: var(--brand-ink);
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
     color: var(--brand-on-primary);
 }
 
@@ -193,7 +193,7 @@
 }
 
 .toggle-switch input:checked + .toggle-slider {
-    background-color: var(--brand-ink);
+    background-color: var(--brand-primary);
 }
 
 .toggle-switch input:checked + .toggle-slider::before {

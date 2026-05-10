@@ -85,12 +85,12 @@
 
 /* 发送按钮特殊样式 */
 .icon-btn.send-btn {
-    background: var(--brand-ink);
+    background: var(--brand-primary);
     color: var(--brand-on-primary);
 }
 
 .icon-btn.send-btn:hover {
-    background: var(--brand-charcoal);
+    background: var(--brand-primary-hover);
 }
 
 .icon-btn.send-btn:active {
@@ -128,8 +128,8 @@
 }
 
 .filter-btn.active {
-    background: var(--brand-ink);
-    border-color: var(--brand-ink);
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
     color: var(--brand-on-primary);
 }
 
@@ -138,7 +138,7 @@
 }
 
 .filter-btn.active:hover {
-    background: var(--brand-charcoal);
+    background: var(--brand-primary-hover);
 }
 
 /* 缩放按钮样式 */
