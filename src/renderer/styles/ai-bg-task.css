@@ -369,17 +369,42 @@
   }
 }
 
-/* 后台发送按钮 */
-.ai-bg-send-btn {
+/* 后台发送按钮（微型按钮，降低视觉权重） */
+.ai-input-area .ai-bg-send-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border-radius: 4px;
   color: var(--text-secondary, #999);
-  padding: 6px;
-  border-radius: 6px;
-  transition: all 0.2s;
+  opacity: 0.4;
+  transition: opacity 0.2s, color 0.2s, background 0.2s;
 }
 
-.ai-bg-send-btn:hover {
+.ai-input-area .ai-bg-send-btn:hover {
+  opacity: 0.7;
   color: var(--accent-color, #1976d2);
   background: rgba(25, 118, 210, 0.08);
+}
+
+.ai-input-area .ai-bg-send-btn:active {
+  opacity: 1;
+  transform: scale(0.95);
+}
+
+/* 深色模式覆盖 */
+.dark-mode .ai-input-area .ai-bg-send-btn {
+  background: transparent;
+  color: var(--ai-muted, #aaa);
+}
+
+.dark-mode .ai-input-area .ai-bg-send-btn:hover {
+  color: var(--ai-accent, #64b5f6);
+  background: rgba(100, 181, 246, 0.08);
+}
+
+.dark-mode .ai-input-area .ai-bg-send-btn:active {
+  opacity: 1;
 }
 
 /* 通知容器 */
