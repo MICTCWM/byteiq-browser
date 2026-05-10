@@ -118,7 +118,7 @@
 }
 
 .bg-task-running .bg-task-status-icon {
-  color: #1976d2;
+  color: var(--brand-primary);
 }
 
 /* 旋转动画 */
@@ -415,7 +415,7 @@
   right: 6px;
   width: 8px;
   height: 8px;
-  background: #1976d2;
+  background: var(--brand-primary);
   border-radius: 50%;
   border: 2px solid var(--bg-primary, #fff);
   display: none;
@@ -429,15 +429,15 @@
 @keyframes bg-task-pulse {
   0% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(25, 118, 210, 0.7);
+    box-shadow: 0 0 0 0 rgba(52, 100, 255, 0.7);
   }
   70% {
     transform: scale(1);
-    box-shadow: 0 0 0 6px rgba(25, 118, 210, 0);
+    box-shadow: 0 0 0 6px rgba(52, 100, 255, 0);
   }
   100% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(25, 118, 210, 0);
+    box-shadow: 0 0 0 0 rgba(52, 100, 255, 0);
   }
 }
 
@@ -455,8 +455,8 @@
 
 .ai-input-area .ai-bg-send-btn:hover {
   opacity: 0.7;
-  color: var(--accent-color, #1976d2);
-  background: rgba(25, 118, 210, 0.08);
+  color: var(--brand-primary);
+  background: rgba(52, 100, 255, 0.08);
 }
 
 .ai-input-area .ai-bg-send-btn:active {
@@ -471,8 +471,8 @@
 }
 
 .dark-mode .ai-input-area .ai-bg-send-btn:hover {
-  color: var(--ai-accent, #64b5f6);
-  background: rgba(100, 181, 246, 0.08);
+  color: var(--brand-info);
+  background: rgba(52, 100, 255, 0.12);
 }
 
 .dark-mode .ai-input-area .ai-bg-send-btn:active {
