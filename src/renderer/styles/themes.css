@@ -2,42 +2,42 @@
 /* 映射：ink→#111111, surface→#1a1a1a, elevated→#222222, border→#333333 */
 
 body.dark-mode {
-    background: var(--brand-ink);
+    background: var(--brand-dark-ink);
     color: var(--brand-hairline-soft);
 }
 
 body.dark-mode .main-container {
-    background: var(--brand-ink);
+    background: var(--brand-dark-ink);
 }
 
 body.dark-mode .webview-mock {
-    background: var(--brand-ink);
+    background: var(--brand-dark-ink);
 }
 
 body.dark-mode webview {
-    background: var(--brand-ink);
+    background: var(--brand-dark-ink);
 }
 
 body.dark-mode .toolbar {
-    background: #1a1a1a;
-    border-bottom: 1px solid #333333;
+    background: var(--brand-dark-surface);
+    border-bottom: 1px solid var(--brand-dark-border);
 }
 
 body.dark-mode .tabs-container {
-    background: #1a1a1a;
+    background: var(--brand-dark-surface);
 }
 
 body.dark-mode .tab {
-    background: #222222;
+    background: var(--brand-dark-elevated);
     color: var(--brand-stone);
 }
 
 body.dark-mode .tab:hover:not(.active) {
-    background: #333333;
+    background: var(--brand-dark-border);
 }
 
 body.dark-mode .tab.active {
-    background: var(--brand-ink);
+    background: var(--brand-dark-ink);
     color: var(--brand-on-primary);
 }
 
@@ -46,30 +46,30 @@ body.dark-mode .toolbar button {
 }
 
 body.dark-mode .toolbar button:hover {
-    background: #333333;
+    background: var(--brand-dark-border);
     color: var(--brand-on-primary);
 }
 
 /* 深色模式 - 高级设置 */
 body.dark-mode .advanced-settings {
-    border-color: #333333;
+    border-color: var(--brand-dark-border);
 }
 
 body.dark-mode .advanced-settings-header {
-    background: #1a1a1a;
+    background: var(--brand-dark-surface);
     color: var(--brand-stone);
 }
 
 body.dark-mode .advanced-settings-header:hover {
-    background: #222222;
+    background: var(--brand-dark-elevated);
 }
 
 body.dark-mode .advanced-settings-content {
-    background: #1a1a1a;
+    background: var(--brand-dark-surface);
 }
 
 body.dark-mode .url-bar {
-    background: #222222;
+    background: var(--brand-dark-elevated);
     color: var(--brand-on-primary);
 }
 
@@ -78,7 +78,7 @@ body.dark-mode .url-bar input {
 }
 
 body.dark-mode .url-bar:focus-within {
-    background: #333333;
+    background: var(--brand-dark-border);
 }
 
 body.dark-mode .url-bar:focus-within::before {
@@ -103,17 +103,17 @@ body.dark-mode #bookmark-svg.active {
 }
 
 body.dark-mode .overlay-panel {
-    background: rgba(17, 17, 17, 0.98);
+    background: rgba(15, 15, 17, 0.98);
     color: var(--brand-hairline-soft);
     border-color: rgba(255, 255, 255, 0.1);
 }
 
 body.dark-mode .list-item:hover {
-    background: #333333;
+    background: var(--brand-dark-border);
 }
 
 body.dark-mode .setting-item {
-    background: #222222;
+    background: var(--brand-dark-elevated);
 }
 
 body.dark-mode .setting-item label {
@@ -141,8 +141,8 @@ body.dark-mode .content {
 }
 
 body.dark-mode .search-box input {
-    background: #222222;
-    border-color: #333333;
+    background: var(--brand-dark-elevated);
+    border-color: var(--brand-dark-border);
     color: var(--brand-on-primary);
 }
 
@@ -151,13 +151,13 @@ body.dark-mode .search-box input:focus {
 }
 
 body.dark-mode .ai-sidebar {
-    background: #1a1a1a;
-    border-left-color: #333333;
+    background: var(--brand-dark-surface);
+    border-left-color: var(--brand-dark-border);
 }
 
 body.dark-mode .ai-header {
-    background: #222222;
-    border-bottom-color: #333333;
+    background: var(--brand-dark-elevated);
+    border-bottom-color: var(--brand-dark-border);
 }
 
 body.dark-mode .ai-header h3 {
@@ -165,11 +165,11 @@ body.dark-mode .ai-header h3 {
 }
 
 body.dark-mode .ai-chat-area {
-    background: #1a1a1a;
+    background: var(--brand-dark-surface);
 }
 
 body.dark-mode .chat-message.ai {
-    background: #222222;
+    background: var(--brand-dark-elevated);
     color: var(--brand-hairline-soft);
 }
 
@@ -180,13 +180,13 @@ body.dark-mode .chat-message.user {
 }
 
 body.dark-mode .ai-input-area {
-    background: #222222;
-    border-top-color: #333333;
+    background: var(--brand-dark-elevated);
+    border-top-color: var(--brand-dark-border);
 }
 
 body.dark-mode .ai-input-area input {
-    background: var(--brand-ink);
-    border-color: #333333;
+    background: var(--brand-dark-ink);
+    border-color: var(--brand-dark-border);
     color: var(--brand-on-primary);
 }
 
@@ -200,20 +200,20 @@ body.dark-mode .ai-input-area button:hover {
 }
 
 body.dark-mode .panel-search input {
-    background: var(--brand-ink);
-    border-color: #333333;
+    background: var(--brand-dark-ink);
+    border-color: var(--brand-dark-border);
     color: var(--brand-on-primary);
 }
 
 body.dark-mode .panel-actions button {
-    background: #222222;
-    border-color: #333333;
+    background: var(--brand-dark-elevated);
+    border-color: var(--brand-dark-border);
     color: var(--brand-hairline-soft);
 }
 
 body.dark-mode .download-actions button {
-    background: #222222;
-    border-color: #333333;
+    background: var(--brand-dark-elevated);
+    border-color: var(--brand-dark-border);
     color: var(--brand-hairline-soft);
 }
 
@@ -227,36 +227,36 @@ body.dark-mode .toggle-switch input:checked + .toggle-slider {
 
 body.dark-mode .tab-context-menu,
 body.dark-mode .custom-context-menu {
-    background: #1a1a1a;
-    border-color: #333333;
+    background: var(--brand-dark-surface);
+    border-color: var(--brand-dark-border);
 }
 
 body.dark-mode .context-menu-item:hover,
 body.dark-mode .tab-context-menu button:hover,
 body.dark-mode .custom-context-menu button:hover {
-    background: #333333;
+    background: var(--brand-dark-border);
 }
 
 /* Find Box 暗模式样式 */
 body.dark-mode #find-box {
-    background: #1a1a1a;
-    border: 1px solid #333333;
+    background: var(--brand-dark-surface);
+    border: 1px solid var(--brand-dark-border);
 }
 
 body.dark-mode #find-box input {
-    background: var(--brand-ink);
-    border-color: #333333;
+    background: var(--brand-dark-ink);
+    border-color: var(--brand-dark-border);
     color: var(--brand-hairline-soft);
 }
 
 /* 设置面板深色模式 */
 body.dark-mode #settings-panel {
-    background: var(--brand-ink);
+    background: var(--brand-dark-ink);
 }
 
 body.dark-mode #settings-panel .settings-header {
-    background: #1a1a1a;
-    border-bottom-color: #333333;
+    background: var(--brand-dark-surface);
+    border-bottom-color: var(--brand-dark-border);
 }
 
 body.dark-mode #settings-panel .settings-header h2 {
@@ -264,8 +264,8 @@ body.dark-mode #settings-panel .settings-header h2 {
 }
 
 body.dark-mode #settings-panel .settings-sidebar {
-    background: #1a1a1a;
-    border-right-color: #333333;
+    background: var(--brand-dark-surface);
+    border-right-color: var(--brand-dark-border);
 }
 
 body.dark-mode .settings-nav-item {
@@ -273,7 +273,7 @@ body.dark-mode .settings-nav-item {
 }
 
 body.dark-mode .settings-nav-item:hover {
-    background: #333333;
+    background: var(--brand-dark-border);
 }
 
 body.dark-mode .settings-nav-item.active {
@@ -283,12 +283,12 @@ body.dark-mode .settings-nav-item.active {
 
 body.dark-mode .settings-section h3 {
     color: var(--brand-hairline-soft);
-    border-bottom-color: #333333;
+    border-bottom-color: var(--brand-dark-border);
 }
 
 body.dark-mode .setting-item {
-    background: #1a1a1a;
-    border-color: #333333;
+    background: var(--brand-dark-surface);
+    border-color: var(--brand-dark-border);
 }
 
 body.dark-mode .setting-item label {
@@ -302,8 +302,8 @@ body.dark-mode .setting-item .setting-desc {
 body.dark-mode .setting-item select,
 body.dark-mode .setting-item input[type="text"],
 body.dark-mode .setting-item input[type="number"] {
-    background: var(--brand-ink);
-    border-color: #333333;
+    background: var(--brand-dark-ink);
+    border-color: var(--brand-dark-border);
     color: var(--brand-hairline-soft);
 }
 
@@ -315,13 +315,13 @@ body.dark-mode .setting-item input[type="number"]:focus {
 }
 
 body.dark-mode .setting-action-btn {
-    background: #222222;
-    border-color: #333333;
+    background: var(--brand-dark-elevated);
+    border-color: var(--brand-dark-border);
     color: var(--brand-hairline-soft);
 }
 
 body.dark-mode .setting-action-btn:hover {
-    background: #333333;
+    background: var(--brand-dark-border);
     border-color: var(--brand-mute);
 }
 
@@ -351,13 +351,13 @@ body.dark-mode .zoom-controls span {
 
 /* 下载筛选器深色模式 */
 body.dark-mode .downloads-filters .filter-btn {
-    background: #222222;
-    border-color: #333333;
+    background: var(--brand-dark-elevated);
+    border-color: var(--brand-dark-border);
     color: var(--brand-stone);
 }
 
 body.dark-mode .downloads-filters .filter-btn:hover {
-    background: #333333;
+    background: var(--brand-dark-border);
 }
 
 body.dark-mode .downloads-filters .filter-btn.active {
@@ -368,12 +368,12 @@ body.dark-mode .downloads-filters .filter-btn.active {
 
 /* 新标签页按钮深色模式 */
 body.dark-mode .new-tab-btn {
-    background: #222222;
+    background: var(--brand-dark-elevated);
     color: var(--brand-stone);
 }
 
 body.dark-mode .new-tab-btn:hover {
-    background: #333333;
+    background: var(--brand-dark-border);
     color: var(--brand-on-primary);
 }
 
@@ -431,7 +431,7 @@ body.dark-mode .download-url {
 
 /* overlay-header 深色模式 */
 body.dark-mode .overlay-header {
-    border-bottom-color: #333333;
+    border-bottom-color: var(--brand-dark-border);
 }
 
 body.dark-mode .overlay-header h2 {
@@ -444,7 +444,7 @@ body.dark-mode .close-overlay {
 }
 
 body.dark-mode .close-overlay:hover {
-    background: #333333;
+    background: var(--brand-dark-border);
     color: var(--brand-on-primary);
 }
 
@@ -459,25 +459,25 @@ body.dark-mode .list-item a:hover {
 
 /* 隐身模式 - 更深的暗色变体 */
 body.incognito-mode .tabs-container {
-    background: var(--brand-ink);
+    background: var(--brand-dark-ink);
 }
 
 body.incognito-mode .tab {
-    background: #222222;
+    background: var(--brand-dark-elevated);
     color: var(--brand-on-primary);
 }
 
 body.incognito-mode .tab.active {
-    background: #333333;
+    background: var(--brand-dark-border);
 }
 
 body.incognito-mode .toolbar {
-    background: #1a1a1a;
-    border-bottom: 1px solid #333333;
+    background: var(--brand-dark-surface);
+    border-bottom: 1px solid var(--brand-dark-border);
 }
 
 body.incognito-mode .url-bar {
-    background: var(--brand-ink);
+    background: var(--brand-dark-ink);
     color: var(--brand-on-primary);
 }
 

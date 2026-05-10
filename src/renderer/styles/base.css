@@ -15,12 +15,19 @@
     --brand-sale-deep: #780700;
     --brand-success: #007d48;
     --brand-success-bright: #1eaa52;
-    --brand-info: #1151ff;
-    --brand-info-deep: #0034e3;
+    --brand-info: #3464ff;
+    --brand-info-deep: #1e4bd1;
+
+    /* 深色模式专用变量 - 提供更好的层次感，避免死板的黑 */
+    --brand-dark-ink: #0f0f11;
+    --brand-dark-surface: #18181b;
+    --brand-dark-elevated: #242427;
+    --brand-dark-border: #323235;
+    --brand-dark-mute: #4b4b4d;
 
     /* 交互色 - 按钮背景、进度条、焦点边框等 */
-    --brand-primary: #1151ff;
-    --brand-primary-hover: #0034e3;
+    --brand-primary: #3464ff;
+    --brand-primary-hover: #1e4bd1;
 
     /* 圆角 */
     --brand-rounded-none: 0px;
