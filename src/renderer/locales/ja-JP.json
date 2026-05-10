@@ -265,7 +265,16 @@
     "modeAsk": "質問",
     "modeAgent": "エージェント",
     "searchHistory": "セッションを検索...",
-    "backToChat": "チャットに戻る"
+    "backToChat": "チャットに戻る",
+    "bgTask": "バックグラウンドタスク",
+    "bgTaskTitle": "バックグラウンドタスク",
+    "bgTaskSend": "バックグラウンド送信",
+    "bgTaskSent": "バックグラウンドで実行中",
+    "bgTaskEmpty": "バックグラウンドタスクなし",
+    "bgTaskCancel": "キャンセル",
+    "bgTaskCompleted": "バックグラウンドタスク完了",
+    "bgTaskFailed": "バックグラウンドタスク失敗",
+    "bgTaskNoResult": "結果なし"
   },
   "newTab": {
     "searchPlaceholder": "検索または URL を入力...",

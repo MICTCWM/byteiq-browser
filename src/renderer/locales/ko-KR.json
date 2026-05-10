@@ -265,7 +265,16 @@
     "modeAsk": "질문",
     "modeAgent": "에이전트",
     "searchHistory": "세션 검색...",
-    "backToChat": "채팅으로 돌아가기"
+    "backToChat": "채팅으로 돌아가기",
+    "bgTask": "백그라운드 작업",
+    "bgTaskTitle": "백그라운드 작업",
+    "bgTaskSend": "백그라운드 전송",
+    "bgTaskSent": "백그라운드에서 실행 중",
+    "bgTaskEmpty": "백그라운드 작업 없음",
+    "bgTaskCancel": "취소",
+    "bgTaskCompleted": "백그라운드 작업 완료",
+    "bgTaskFailed": "백그라운드 작업 실패",
+    "bgTaskNoResult": "결과 없음"
   },
   "newTab": {
     "searchPlaceholder": "검색 또는 URL 입력...",

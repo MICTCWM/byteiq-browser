@@ -308,7 +308,16 @@
     "modeAsk": "询问",
     "modeAgent": "代理",
     "searchHistory": "搜索会话...",
-    "backToChat": "返回对话"
+    "backToChat": "返回对话",
+    "bgTask": "后台任务",
+    "bgTaskTitle": "后台任务",
+    "bgTaskSend": "后台发送",
+    "bgTaskSent": "已发送到后台执行",
+    "bgTaskEmpty": "暂无后台任务",
+    "bgTaskCancel": "取消",
+    "bgTaskCompleted": "后台任务已完成",
+    "bgTaskFailed": "后台任务执行失败",
+    "bgTaskNoResult": "无结果"
   },
   "newTab": {
     "searchPlaceholder": "搜索或输入 URL...",

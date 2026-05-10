@@ -279,7 +279,16 @@
     "modeAsk": "詢問",
     "modeAgent": "代理",
     "searchHistory": "搜尋工作階段...",
-    "backToChat": "返回對話"
+    "backToChat": "返回對話",
+    "bgTask": "背景任務",
+    "bgTaskTitle": "背景任務",
+    "bgTaskSend": "背景傳送",
+    "bgTaskSent": "已傳送至背景執行",
+    "bgTaskEmpty": "無背景任務",
+    "bgTaskCancel": "取消",
+    "bgTaskCompleted": "背景任務已完成",
+    "bgTaskFailed": "背景任務執行失敗",
+    "bgTaskNoResult": "無結果"
   },
   "newTab": {
     "searchPlaceholder": "搜尋或輸入 URL...",

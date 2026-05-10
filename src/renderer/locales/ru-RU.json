@@ -265,7 +265,16 @@
     "modeAsk": "Вопрос",
     "modeAgent": "Агент",
     "searchHistory": "Поиск сеансов...",
-    "backToChat": "Вернуться к чату"
+    "backToChat": "Вернуться к чату",
+    "bgTask": "Фоновые задачи",
+    "bgTaskTitle": "Фоновые задачи",
+    "bgTaskSend": "Отправить в фон",
+    "bgTaskSent": "Отправлено в фоновый режим",
+    "bgTaskEmpty": "Нет фоновых задач",
+    "bgTaskCancel": "Отмена",
+    "bgTaskCompleted": "Фоновая задача завершена",
+    "bgTaskFailed": "Фоновая задача не удалась",
+    "bgTaskNoResult": "Нет результата"
   },
   "newTab": {
     "searchPlaceholder": "Поиск или ввод URL...",

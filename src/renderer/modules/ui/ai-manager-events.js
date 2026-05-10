@@ -47,7 +47,9 @@ function createEventManager(options) {
     bindAskSelectionEvent,
     scrollToBottom,
     buildSelectionContext,
-    pageContext
+    pageContext,
+    bgTaskRunner,
+    bgTaskPanelUI
   } = options;
 
   /**
@@ -204,6 +206,31 @@ function createEventManager(options) {
       scrollToBottom,
       buildSelectionContext
     });
+
+    // 后台发送按钮
+    const bgSendBtn = documentRef.getElementById('ai-bg-send-btn');
+    if (bgSendBtn) {
+      bgSendBtn.addEventListener('click', () => {
+        const text = aiInput.value.trim();
+        if (!text) return;
+        aiInput.value = '';
+        // 异步执行后台任务，不阻塞 UI
+        bgTaskRunner.runBackgroundTask(text).catch(err => {
+          console.error('[ai-manager-events] Background task failed:', err);
+        });
+        if (showToast) {
+          showToast(t('ai.bgTaskSent') || '已发送到后台执行', 'info');
+        }
+      });
+    }
+
+    // 后台任务图标按钮（header）
+    const bgTaskBtn = documentRef.getElementById('ai-bg-task-btn');
+    if (bgTaskBtn) {
+      bgTaskBtn.addEventListener('click', () => {
+        if (bgTaskPanelUI) bgTaskPanelUI.togglePanel();
+      });
+    }
 
     // 初始化页面状态指示器
     pageContext.initPageStatus();

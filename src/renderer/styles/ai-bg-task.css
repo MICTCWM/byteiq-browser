@@ -1,0 +1,348 @@
+/* 后台任务面板样式 */
+
+/* 后台任务面板 */
+.bg-task-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-primary, #fff);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.bg-task-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.bg-task-back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary, #666);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.bg-task-back-btn:hover {
+  color: var(--text-primary, #333);
+}
+
+.bg-task-panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+}
+
+/* 任务列表 */
+.bg-task-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.bg-task-empty {
+  text-align: center;
+  color: var(--text-secondary, #999);
+  padding: 40px 16px;
+  font-size: 13px;
+}
+
+/* 任务项 */
+.bg-task-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  transition: background 0.2s;
+}
+
+.bg-task-item.bg-task-running {
+  background: var(--bg-secondary, #f5f5f5);
+}
+
+.bg-task-item.bg-task-completed {
+  background: transparent;
+}
+
+.bg-task-item.bg-task-error {
+  background: rgba(244, 67, 54, 0.06);
+}
+
+.bg-task-item.bg-task-clickable {
+  cursor: pointer;
+}
+
+.bg-task-item.bg-task-clickable:hover {
+  background: var(--bg-hover, #e8e8e8);
+}
+
+/* 状态图标 */
+.bg-task-status-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary, #999);
+}
+
+.bg-task-completed .bg-task-status-icon {
+  color: #4caf50;
+}
+
+.bg-task-error .bg-task-status-icon {
+  color: #f44336;
+}
+
+/* 旋转动画 */
+.bg-task-spinning {
+  animation: bg-task-spin 1s linear infinite;
+}
+
+@keyframes bg-task-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 任务名称 */
+.bg-task-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary, #333);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bg-task-error .bg-task-name {
+  color: #f44336;
+}
+
+/* 任务时间 */
+.bg-task-time {
+  font-size: 11px;
+  color: var(--text-secondary, #999);
+  flex-shrink: 0;
+}
+
+/* 取消按钮 */
+.bg-task-cancel-btn {
+  background: none;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--text-secondary, #666);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.bg-task-cancel-btn:hover {
+  background: var(--bg-hover, #e8e8e8);
+  color: var(--text-primary, #333);
+}
+
+/* 结果弹窗 */
+.bg-task-result-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bg-task-result-dialog {
+  background: var(--bg-primary, #fff);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.bg-task-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.bg-task-result-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.bg-task-result-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary, #666);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.bg-task-result-close-btn:hover {
+  color: var(--text-primary, #333);
+}
+
+.bg-task-result-content {
+  padding: 16px 20px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary, #333);
+}
+
+.bg-task-result-text {
+  /* 复用 ai-markdown 样式 */
+}
+
+.bg-task-result-text p {
+  margin: 0 0 8px 0;
+}
+
+.bg-task-result-text p:last-child {
+  margin-bottom: 0;
+}
+
+/* Header 后台任务图标按钮 */
+.ai-header-bg-task-btn {
+  position: relative;
+}
+
+.ai-header-bg-task-btn.has-running-tasks svg {
+  animation: bg-task-spin 1.5s linear infinite;
+  color: var(--accent-color, #1976d2);
+}
+
+/* 后台发送按钮 */
+.ai-bg-send-btn {
+  color: var(--text-secondary, #999);
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.ai-bg-send-btn:hover {
+  color: var(--accent-color, #1976d2);
+  background: rgba(25, 118, 210, 0.08);
+}
+
+/* 通知容器 */
+.bg-notification-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+/* 通知项 */
+.bg-notification {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--bg-primary, #fff);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  min-width: 280px;
+  max-width: 380px;
+  cursor: pointer;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.3s ease;
+}
+
+.bg-notification-enter {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.bg-notification-exit {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.bg-notification-success {
+  border-left: 3px solid #4caf50;
+}
+
+.bg-notification-error {
+  border-left: 3px solid #f44336;
+}
+
+.bg-notification-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.bg-notification-success .bg-notification-icon {
+  color: #4caf50;
+}
+
+.bg-notification-error .bg-notification-icon {
+  color: #f44336;
+}
+
+.bg-notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.bg-notification-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+  margin-bottom: 2px;
+}
+
+.bg-notification-preview {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bg-notification-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary, #999);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.bg-notification-close:hover {
+  color: var(--text-primary, #333);
+}

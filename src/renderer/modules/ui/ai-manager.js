@@ -24,6 +24,12 @@ const { createAiToolbar } = require('../ai/chat/ai-toolbar');
 const { createContextMenu } = require('./ai-context-pie');
 const { createContextCompress } = require('../ai/context/ai-context-compress');
 const { createEventManager } = require('./ai-manager-events');
+const {
+  createBgTaskManager,
+  createBgTaskRunner,
+  createBgTaskPanelUI,
+  createBgTaskNotification
+} = require('../ai/background');
 
 const path = require('path');
 
@@ -466,6 +472,50 @@ function createAiManager(options) {
     await renderSessionsList();
   }
 
+  // 创建后台任务管理器
+  const bgTaskManager = createBgTaskManager({
+    onTaskStatusChange: () => {
+      if (bgTaskPanelUI) bgTaskPanelUI.renderTaskList();
+      if (bgTaskPanelUI) bgTaskPanelUI.updateHeaderIcon();
+    }
+  });
+
+  // 创建后台任务通知组件
+  const bgTaskNotification = createBgTaskNotification({
+    documentRef,
+    onNotificationClick: _task => {
+      if (bgTaskPanelUI) bgTaskPanelUI.showPanel();
+    },
+    t
+  });
+
+  // 创建后台任务面板 UI
+  const bgTaskPanelUI = createBgTaskPanelUI({
+    documentRef,
+    taskManager: bgTaskManager,
+    t
+  });
+
+  // 创建后台任务执行器
+  const bgTaskRunner = createBgTaskRunner({
+    ipcRenderer,
+    store,
+    taskManager: bgTaskManager,
+    documentRef,
+    t,
+    buildSystemPrompt,
+    onTaskComplete: task => {
+      bgTaskNotification.showTaskCompleteNotification(task);
+      bgTaskPanelUI.renderTaskList();
+      bgTaskPanelUI.updateHeaderIcon();
+    },
+    onTaskError: (task, error) => {
+      bgTaskNotification.showTaskErrorNotification(task, error);
+      bgTaskPanelUI.renderTaskList();
+      bgTaskPanelUI.updateHeaderIcon();
+    }
+  });
+
   // 创建事件管理器
   const eventManager = createEventManager({
     toggleAiBtn,
@@ -510,11 +560,17 @@ function createAiManager(options) {
     bindAskSelectionEvent,
     scrollToBottom,
     buildSelectionContext,
-    pageContext
+    pageContext,
+    bgTaskRunner,
+    bgTaskPanelUI
   });
 
   async function bindEvents() {
     await eventManager.bindEvents();
+
+    // 初始化后台任务面板和通知
+    bgTaskPanelUI.init();
+    bgTaskNotification.init();
 
     // 初始化
     const session = await getCurrentSession();
