@@ -204,7 +204,7 @@ const webToolDefs = [
   {
     name: 'dispatch_background_task',
     description:
-      '派发任务给后台模型执行。后台模型会独立处理任务,前台会等待任务完成(最多5分钟)后继续。',
+      '派发任务给后台模型执行。后台模型会独立处理任务，最多可同时运行3个后台任务，所有后台任务完成后结果会统一注入前台上下文。',
     parameters: {
       type: 'object',
       properties: {
@@ -228,19 +228,19 @@ const webToolDefs = [
         return { success: false, error: 'Background task runner not available' };
       }
 
-      // 派发后台任务(强制等待模式)
+      // 派发后台任务(非等待模式，即发即忘)
+      // 并发控制在 ai-agent-tool-loop.js 中处理
       try {
-        const result = await bgTaskRunner.runBackgroundTask(taskQuery, true);
+        const task = bgTaskRunner.runBackgroundTask(taskQuery, false);
 
-        // 等待模式：runBackgroundTask 返回的是 Promise，resolve 后包含完整结果
-        // 直接返回结果给前台模型
+        // 非等待模式：runBackgroundTask 返回任务对象
+        // 结果由 tool-loop 统一收集和注入
         return {
           success: true,
-          taskId: result.taskId,
-          result: result.result || '',
-          toolCallHistory: result.toolCallHistory || [],
-          status: result.status,
-          message: result.message || '后台任务已完成'
+          taskId: task.id,
+          status: 'dispatched',
+          isBackgroundTask: true, // 标识为后台任务工具，供调度器识别
+          message: `后台任务 #${task.id} 已派发`
         };
       } catch (error) {
         return {

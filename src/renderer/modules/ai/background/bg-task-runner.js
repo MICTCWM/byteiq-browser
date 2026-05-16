@@ -379,9 +379,9 @@ function createBgTaskRunner(options) {
    * 重试策略：第1次5s，第2次10s，每次+5s，最多5次
    * @param {string} userText - 用户输入文本
    * @param {boolean} isWaiting - 是否为前台模型等待的任务
-   * @returns {Promise<Object>} 任务对象或等待结果
+   * @returns {Object|Promise<Object>} 任务对象或等待结果
    */
-  async function runBackgroundTask(userText, isWaiting = false) {
+  function runBackgroundTask(userText, isWaiting = false) {
     // 创建任务记录
     const task = taskManager.createTask(userText);
 
@@ -396,7 +396,7 @@ function createBgTaskRunner(options) {
       return registerWaitingTask(task.id, 300000);
     }
 
-    // 继续模式: 直接返回任务对象
+    // 非等待模式: 同步返回任务对象，异步执行任务
     executeBackgroundTaskInternal(task, userText).catch(error => {
       console.error('[bg-task-runner] Background task error:', error);
     });
@@ -720,7 +720,8 @@ function createBgTaskRunner(options) {
     runBackgroundTask,
     executeBackgroundTaskInternal,
     handleWaitingTaskComplete,
-    getWaitingTaskCount: () => waitingTasks.size
+    getWaitingTaskCount: () => waitingTasks.size,
+    waitForTask: (taskId, timeout) => taskManager.waitForTask(taskId, timeout)
   };
 }
 

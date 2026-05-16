@@ -1,10 +1,17 @@
 /**
  * AI Agent 工具调用循环处理
  * 封装 tool_calls 结果的渲染、执行、历史记录等逻辑
+ * 支持后台任务工具并行执行（最多 3 个），其他工具顺序执行
  */
 
 const { renderMarkdownToElement } = require('../chat/ai-markdown-renderer');
 const { truncateToolResult } = require('./ai-agent-utils');
+
+// 后台任务工具标识列表
+const BACKGROUND_TASK_TOOLS = ['dispatch_background_task'];
+
+// 最大并行后台任务数
+const MAX_PARALLEL_BG_TASKS = 3;
 
 /**
  * 创建工具循环处理器
@@ -26,21 +33,22 @@ function createToolLoopHandler(deps) {
     getCurrentPageInfo,
     bindTabToSession,
     documentRef,
-    handleBgTaskResult, // 新增: 处理后台任务结果回调
-    handleWaitSeconds // 新增: 处理等待秒数回调
+    handleBgTaskResult,
+    handleWaitSeconds,
+    getBgTaskRunner
   } = deps;
 
   /**
+   * 判断是否为后台任务工具
+   */
+  function isBackgroundTaskTool(toolName) {
+    return BACKGROUND_TASK_TOOLS.includes(toolName);
+  }
+
+  /**
    * 处理 tool_calls 类型的响应
-   * @param {Object} params - 参数
-   * @param {Object} params.result - API 返回的 tool_calls 结果
-   * @param {HTMLElement} params.aiMsgElement - AI 消息 DOM 元素
-   * @param {Object} params.session - 当前会话
-   * @param {Array} params.agentMessageHistory - 消息历史（可变引用）
-   * @returns {Promise<{ shouldBreak: boolean }>} 是否应中断循环
    */
   async function handleToolCalls({ result, aiMsgElement, session, agentMessageHistory }) {
-    // 流式监听器已经把 AI 的思考+文字渲染到 aiMsgElement
     const hasStreamedContent =
       aiMsgElement.querySelector('.message-content') ||
       aiMsgElement.querySelector('.think-dropdown');
@@ -94,7 +102,6 @@ function createToolLoopHandler(deps) {
       tool_calls: openAiToolCalls
     });
 
-    // 保存带工具调用的助手消息到历史
     const assistantSavedContent = result.reasoningContent
       ? `<!--think-->${result.reasoningContent}<!--endthink-->${result.content || ''}`
       : result.content || '';
@@ -116,15 +123,105 @@ function createToolLoopHandler(deps) {
 
     let shouldBreak = false;
 
+    // 并发调度状态
+    const bgTaskPromises = [];
+    const bgTaskResults = [];
+    const bgTaskRunner = getBgTaskRunner?.();
+
     for (let ti = 0; ti < result.toolCalls.length; ti++) {
       const toolCall = result.toolCalls[ti];
 
-      // 工具间间隔 3 秒（首个工具无延迟）
+      // 后台任务工具：并发控制
+      if (isBackgroundTaskTool(toolCall.name)) {
+        // 如果已达到最大并行数，等待任意一个完成
+        if (bgTaskPromises.length >= MAX_PARALLEL_BG_TASKS) {
+          const completedTask = await Promise.race(bgTaskPromises);
+          const completedIndex = bgTaskPromises.findIndex(
+            p => p === completedTask || (p.taskId && p.taskId === completedTask?.id)
+          );
+          if (completedIndex !== -1) {
+            bgTaskPromises.splice(completedIndex, 1);
+          }
+          if (completedTask) {
+            bgTaskResults.push(completedTask);
+          }
+        }
+
+        // 执行前更新卡片状态为 running
+        const runningTarget = toolMessages.get(toolCall.id);
+        if (runningTarget) {
+          toolCardUI.renderToolCard(runningTarget, {
+            title: toolCardUI.getToolTitle(toolCall.name),
+            description: toolCardUI.buildToolCallDescription(toolCall),
+            status: 'running',
+            toolName: toolCall.name,
+            args: toolCall.arguments
+          });
+        }
+
+        // 执行后台任务工具
+        const toolResult = await toolsExecutor.execute(toolCall);
+
+        // 如果成功派发，创建等待 Promise
+        if (toolResult?.success && toolResult?.taskId && bgTaskRunner?.waitForTask) {
+          const waitPromise = bgTaskRunner.waitForTask(toolResult.taskId);
+          waitPromise.taskId = toolResult.taskId;
+          bgTaskPromises.push(waitPromise);
+        }
+
+        // 更新卡片状态
+        const target = toolMessages.get(toolCall.id);
+        if (target) {
+          const summary = toolCardUI.buildToolResultSummary(toolCall, toolResult);
+          toolCardUI.renderToolCard(target, {
+            title: toolCardUI.getToolTitle(toolCall.name),
+            description: summary.text || `后台任务 #${toolResult?.taskId || ''} 已派发`,
+            status: summary.status,
+            toolName: toolCall.name,
+            args: toolCall.arguments,
+            toolResult
+          });
+        }
+
+        // 添加工具结果到历史
+        const truncated = truncateToolResult(toolCall.name, toolResult);
+        agentMessageHistory.push({
+          role: 'tool',
+          tool_call_id: toolCall.id,
+          content: truncated.content
+        });
+
+        if (contextIsolation?.isSessionActive?.(session.id)) {
+          await historyStorage.addMessage(session.id, {
+            role: 'tool',
+            content: truncated.summary,
+            metadata: {
+              toolCallId: toolCall.id,
+              toolName: toolCall.name,
+              status: toolResult?.success ? 'success' : 'error',
+              description: toolResult?.message || '后台任务已派发'
+            }
+          });
+        }
+
+        continue;
+      }
+
+      // 其他工具：等待所有后台任务完成后再执行
+      if (bgTaskPromises.length > 0) {
+        const completedTasks = await Promise.all(bgTaskPromises);
+        bgTaskResults.push(...completedTasks.filter(t => t));
+        bgTaskPromises.length = 0;
+        injectBgTaskResultsToHistory(bgTaskResults, agentMessageHistory);
+        bgTaskResults.length = 0;
+      }
+
+      // 工具间间隔 3 秒
       if (ti > 0) {
         await new Promise(resolve => setTimeout(resolve, 3000));
       }
 
-      // 执行前更新卡片状态为 running（旋转动画）
+      // 执行前更新卡片状态
       const runningTarget = toolMessages.get(toolCall.id);
       if (runningTarget && toolCall.name !== 'end_session') {
         toolCardUI.renderToolCard(runningTarget, {
@@ -139,14 +236,14 @@ function createToolLoopHandler(deps) {
       const toolResult = await toolsExecutor.execute(toolCall);
 
       // 特殊处理: 等待秒数
-      if (toolCall.name === 'wait_seconds' && toolResult?.success && toolResult.waitMode) {
+      if (toolCall.name === 'wait_seconds' && toolResult?.success && toolResult?.waitMode) {
         const seconds = toolResult.waitSeconds;
         if (typeof handleWaitSeconds === 'function') {
           await handleWaitSeconds(seconds);
         }
       }
 
-      // 对于 search_page 工具，将新创建的标签页绑定到当前会话
+      // search_page 工具绑定会话
       if (
         toolCall.name === 'search_page' &&
         toolResult?.success &&
@@ -164,7 +261,6 @@ function createToolLoopHandler(deps) {
       const target = toolMessages.get(toolCall.id) || addChatMessage('', 'ai');
 
       if (toolCall.name === 'end_session') {
-        // 将 summary 以 Markdown 渲染到消息区域
         const summaryText = toolCall.arguments?.summary || toolResult?.summary || '';
         if (summaryText) {
           const summaryMsg = addChatMessage('', 'ai');
@@ -191,8 +287,6 @@ function createToolLoopHandler(deps) {
       }
 
       const truncated = truncateToolResult(toolCall.name, toolResult);
-
-      // 查找并更新 agentMessageHistory 中对应的 tool 消息
       const toolMsgIndex = agentMessageHistory.findIndex(
         msg => msg.role === 'tool' && msg.tool_call_id === toolCall.id
       );
@@ -215,7 +309,7 @@ function createToolLoopHandler(deps) {
         args: toolCall.arguments,
         toolResult
       });
-      // 更新任务状态追踪
+
       if (typeof updateTaskState === 'function') {
         const steps =
           typeof getTaskState === 'function' && getTaskState()
@@ -232,7 +326,7 @@ function createToolLoopHandler(deps) {
           lastAction: summary.text
         });
       }
-      // 保存工具结果到历史（使用截断后的内容防止存储膨胀）
+
       if (contextIsolation?.isSessionActive?.(session.id)) {
         await historyStorage.addMessage(session.id, {
           role: 'tool',
@@ -247,7 +341,42 @@ function createToolLoopHandler(deps) {
       }
     }
 
+    // 循环结束后等待剩余后台任务完成
+    if (bgTaskPromises.length > 0) {
+      const completedTasks = await Promise.all(bgTaskPromises);
+      bgTaskResults.push(...completedTasks.filter(t => t));
+      bgTaskPromises.length = 0;
+      injectBgTaskResultsToHistory(bgTaskResults, agentMessageHistory);
+      bgTaskResults.length = 0;
+    }
+
     return { shouldBreak };
+  }
+
+  /**
+   * 将后台任务结果统一注入到消息历史
+   */
+  function injectBgTaskResultsToHistory(bgTaskResults, agentMessageHistory) {
+    if (!bgTaskResults || bgTaskResults.length === 0) return;
+
+    const resultSummaries = bgTaskResults
+      .map(task => {
+        const toolSummary =
+          task?.resumeMetadata?.toolCallHistory
+            ?.map(tc => tc.title || tc.toolName)
+            ?.filter(name => name)
+            ?.join(' → ') || '';
+        return `任务 #${task?.id}: ${task?.name}\n结果: ${task?.result || '无结果'}${toolSummary ? `\n执行步骤: ${toolSummary}` : ''}`;
+      })
+      .join('\n\n');
+
+    // 使用 user 角色而非 system，避免 API 报错
+    const resultMessage = {
+      role: 'user',
+      content: `[后台任务结果汇总] ${bgTaskResults.length} 个后台任务已完成。\n\n${resultSummaries}\n\n请根据任务结果继续处理。`
+    };
+
+    agentMessageHistory.push(resultMessage);
   }
 
   return { handleToolCalls };

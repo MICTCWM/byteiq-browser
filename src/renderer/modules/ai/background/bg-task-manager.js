@@ -17,6 +17,9 @@ function createBgTaskManager(options = {}) {
   // 任务 ID 计数器
   let taskCounter = 0;
 
+  // 任务完成等待队列: taskId -> [{ resolve, reject }]
+  const taskWaiters = new Map();
+
   // 持久化存储键名
   const STORE_KEY = 'bgTasks';
 
@@ -85,6 +88,12 @@ function createBgTaskManager(options = {}) {
       onTaskStatusChange(task);
     }
     saveTasks();
+    // 触发等待队列
+    const waiters = taskWaiters.get(taskId);
+    if (waiters) {
+      taskWaiters.delete(taskId);
+      waiters.forEach(w => w.resolve(task));
+    }
   }
 
   /**
@@ -102,6 +111,12 @@ function createBgTaskManager(options = {}) {
       onTaskStatusChange(task);
     }
     saveTasks();
+    // 触发等待队列
+    const waiters = taskWaiters.get(taskId);
+    if (waiters) {
+      taskWaiters.delete(taskId);
+      waiters.forEach(w => w.resolve(task));
+    }
   }
 
   /**
@@ -410,6 +425,50 @@ function createBgTaskManager(options = {}) {
   // 初始化时加载持久化数据
   loadTasks();
 
+  /**
+   * 等待任务完成
+   * @param {string} taskId - 任务 ID
+   * @param {number} timeout - 超时时间（毫秒），默认 5 分钟
+   * @returns {Promise<Object>} 任务对象
+   */
+  function waitForTask(taskId, timeout = 300000) {
+    const task = tasks.get(taskId);
+    if (!task) {
+      return Promise.reject(new Error(`Task not found: ${taskId}`));
+    }
+    // 如果任务已完成，直接返回
+    if (task.status === 'completed' || task.status === 'error') {
+      return Promise.resolve(task);
+    }
+    // 创建等待 Promise
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        const waiters = taskWaiters.get(taskId);
+        if (waiters) {
+          const idx = waiters.findIndex(w => w.resolve === resolve);
+          if (idx !== -1) waiters.splice(idx, 1);
+        }
+        reject(new Error(`Task wait timeout: ${taskId}`));
+      }, timeout);
+
+      const waiter = {
+        resolve: t => {
+          clearTimeout(timeoutId);
+          resolve(t);
+        },
+        reject: e => {
+          clearTimeout(timeoutId);
+          reject(e);
+        }
+      };
+
+      if (!taskWaiters.has(taskId)) {
+        taskWaiters.set(taskId, []);
+      }
+      taskWaiters.get(taskId).push(waiter);
+    });
+  }
+
   return {
     createTask,
     completeTask,
@@ -427,7 +486,8 @@ function createBgTaskManager(options = {}) {
     getTasks,
     getTaskById,
     getRunningCount,
-    removeTask
+    removeTask,
+    waitForTask
   };
 }
 

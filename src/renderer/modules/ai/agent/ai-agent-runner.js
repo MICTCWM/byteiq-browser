@@ -91,7 +91,8 @@ function createAiAgentRunner(options) {
     bindTabToSession,
     documentRef,
     handleBgTaskResult, // 新增: 处理后台任务结果的回调
-    handleWaitSeconds // 新增: 处理等待秒数的回调
+    handleWaitSeconds, // 新增: 处理等待秒数的回调
+    getBgTaskRunner // 新增: 获取后台任务执行器，用于并发控制
   });
 
   /**
