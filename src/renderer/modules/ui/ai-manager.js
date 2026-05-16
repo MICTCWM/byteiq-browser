@@ -28,7 +28,8 @@ const {
   createBgTaskManager,
   createBgTaskRunner,
   createBgTaskPanelUI,
-  createBgTaskNotification
+  createBgTaskNotification,
+  createBgTaskResumeHandler
 } = require('../ai/background');
 
 const path = require('path');
@@ -497,7 +498,30 @@ function createAiManager(options) {
   const bgTaskPanelUI = createBgTaskPanelUI({
     documentRef,
     taskManager: bgTaskManager,
-    t
+    t,
+    onResumeTask: task => {
+      if (bgTaskResumeHandler) {
+        bgTaskResumeHandler.resumeTaskToFrontend(task);
+      }
+    }
+  });
+
+  // 创建后台任务恢复处理器
+  const bgTaskResumeHandler = createBgTaskResumeHandler({
+    documentRef,
+    aiChatArea,
+    addChatMessage,
+    updateStreamingMessage,
+    finishStreamingMessage,
+    historyStorage,
+    getCurrentSession,
+    updateSession,
+    renderSessionsList,
+    agentRunner,
+    setInputEnabled,
+    store,
+    t,
+    contextIsolation
   });
 
   // 创建后台任务执行器

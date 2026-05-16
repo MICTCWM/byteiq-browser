@@ -351,10 +351,22 @@ function createBgTaskRunner(options) {
     ];
 
     const contextSize = getModelContextSize(store);
+
+    // 保存模型和上下文长度到恢复元数据
+    const currentModel = store.get('settings.aiModel', 'unknown');
+    taskManager.updateResumeMetadata(task.id, {
+      model: currentModel,
+      contextSize: contextSize
+    });
+
     const MAX_RETRIES = 5;
     const BASE_RETRY_DELAY = 5000;
     let retryCount = 0;
     let succeeded = false;
+
+    // 用于收集最后的思考内容和总结
+    let lastThinkingContent = '';
+    let finalSummary = '';
 
     while (!succeeded && retryCount <= MAX_RETRIES && !abortController.aborted) {
       let maxIterations = 30;
@@ -404,7 +416,12 @@ function createBgTaskRunner(options) {
                   taskId: result.taskId
                 };
                 // 跳转到 tool_calls 处理
-                await handleBgToolCalls(processedResult, agentMessageHistory, task);
+                await handleBgToolCalls(
+                  processedResult,
+                  agentMessageHistory,
+                  task,
+                  lastThinkingContent
+                );
                 continue;
               }
             }
@@ -414,6 +431,11 @@ function createBgTaskRunner(options) {
 
             if (!result.content || result.content.trim().length === 0) {
               break;
+            }
+
+            // 收集思考内容（用于恢复时显示）
+            if (result.reasoningContent) {
+              lastThinkingContent = result.reasoningContent;
             }
 
             const content = result.content.trim().toLowerCase();
@@ -427,7 +449,13 @@ function createBgTaskRunner(options) {
 
             // 智能终止策略
             if (isDuplicate || containsCompletionKeyword || textOnlyCount >= 5) {
-              // 将最后的文本作为结果
+              // 将最后的文本作为结果，并保存恢复元数据
+              finalSummary = result.content;
+              taskManager.updateResumeMetadata(task.id, {
+                finalSummary: finalSummary,
+                thinkingContent: lastThinkingContent,
+                messageHistory: agentMessageHistory.slice(-6) // 保留最后几条消息作为上下文
+              });
               taskManager.completeTask(task.id, result.content);
               break;
             }
@@ -437,7 +465,7 @@ function createBgTaskRunner(options) {
           if (result.type === 'tool_calls') {
             textOnlyCount = 0;
             previousMessages.clear();
-            await handleBgToolCalls(result, agentMessageHistory, task);
+            await handleBgToolCalls(result, agentMessageHistory, task, lastThinkingContent);
 
             if (task.status !== 'running') break;
           }
@@ -512,7 +540,7 @@ function createBgTaskRunner(options) {
   /**
    * 处理后台任务的 tool_calls
    */
-  async function handleBgToolCalls(result, agentMessageHistory, task) {
+  async function handleBgToolCalls(result, agentMessageHistory, task, lastThinkingContent) {
     // 构建 OpenAI 格式的 tool_calls
     const openAiToolCalls = result.toolCalls.map(call => ({
       id: call.id,
@@ -562,9 +590,24 @@ function createBgTaskRunner(options) {
           tool_call_id: toolCall.id,
           content: summaryText
         });
+        // 保存最终的恢复元数据
+        taskManager.updateResumeMetadata(task.id, {
+          finalSummary: summaryText,
+          thinkingContent: result.reasoningContent || lastThinkingContent,
+          messageHistory: agentMessageHistory.slice(-6)
+        });
         taskManager.completeTask(task.id, summaryText);
         return;
       }
+
+      // 添加工具调用到历史记录（用于恢复时渲染）
+      taskManager.addToolCallToHistory(task.id, {
+        toolName: toolCall.name,
+        status: toolStatus,
+        title: getToolTitle(toolCall.name),
+        arguments: toolCall.arguments || {},
+        result: toolResult
+      });
 
       // 截断工具结果防止 token 膨胀
       const { truncateToolResult } = require('../agent/ai-agent-utils');

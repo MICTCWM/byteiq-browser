@@ -51,7 +51,16 @@ function createBgTaskManager(options = {}) {
       latestToolCall: null,
       retryCount: 0,
       retryDelay: 0,
-      retryTimer: null
+      retryTimer: null,
+      // 恢复到前台所需的元数据
+      resumeMetadata: {
+        model: null,
+        contextSize: null,
+        toolCallHistory: [],
+        finalSummary: null,
+        thinkingContent: null,
+        messageHistory: []
+      }
     };
     tasks.set(id, task);
     if (typeof onTaskStatusChange === 'function') {
@@ -227,6 +236,53 @@ function createBgTaskManager(options = {}) {
   }
 
   /**
+   * 更新任务的恢复元数据
+   * @param {string} taskId - 任务 ID
+   * @param {Object} metadata - 恢复元数据
+   */
+  function updateResumeMetadata(taskId, metadata) {
+    const task = tasks.get(taskId);
+    if (!task) return;
+    task.resumeMetadata = {
+      ...task.resumeMetadata,
+      ...metadata
+    };
+    saveTasks();
+  }
+
+  /**
+   * 添加工具调用到历史记录
+   * @param {string} taskId - 任务 ID
+   * @param {Object} toolCallRecord - 工具调用记录 { toolName, status, title, arguments, result }
+   */
+  function addToolCallToHistory(taskId, toolCallRecord) {
+    const task = tasks.get(taskId);
+    if (!task) return;
+    if (!task.resumeMetadata) {
+      task.resumeMetadata = {
+        model: null,
+        contextSize: null,
+        toolCallHistory: [],
+        finalSummary: null,
+        thinkingContent: null,
+        messageHistory: []
+      };
+    }
+    task.resumeMetadata.toolCallHistory.push(toolCallRecord);
+  }
+
+  /**
+   * 获取任务的恢复元数据
+   * @param {string} taskId - 任务 ID
+   * @returns {Object|null}
+   */
+  function getResumeMetadata(taskId) {
+    const task = tasks.get(taskId);
+    if (!task) return null;
+    return task.resumeMetadata || null;
+  }
+
+  /**
    * 获取所有任务列表（按时间倒序）
    * @returns {Array<Object>}
    */
@@ -279,7 +335,17 @@ function createBgTaskManager(options = {}) {
       createdAt: task.createdAt,
       completedAt: task.completedAt,
       latestToolCall: task.latestToolCall,
-      retryCount: task.retryCount || 0
+      retryCount: task.retryCount || 0,
+      // 恢复元数据（仅保存关键字段）
+      resumeMetadata: task.resumeMetadata
+        ? {
+            model: task.resumeMetadata.model,
+            contextSize: task.resumeMetadata.contextSize,
+            toolCallHistory: task.resumeMetadata.toolCallHistory || [],
+            finalSummary: task.resumeMetadata.finalSummary,
+            thinkingContent: task.resumeMetadata.thinkingContent
+          }
+        : null
     };
   }
 
@@ -320,7 +386,16 @@ function createBgTaskManager(options = {}) {
         abortController: null,
         retryCount: data.retryCount || 0,
         retryDelay: 0,
-        retryTimer: null
+        retryTimer: null,
+        // 确保resumeMetadata存在
+        resumeMetadata: data.resumeMetadata || {
+          model: null,
+          contextSize: null,
+          toolCallHistory: [],
+          finalSummary: null,
+          thinkingContent: null,
+          messageHistory: []
+        }
       };
       tasks.set(task.id, task);
       // 恢复计数器，避免 ID 冲突
@@ -343,6 +418,9 @@ function createBgTaskManager(options = {}) {
     setRetrying,
     resetToRunning,
     updateLatestToolCall,
+    updateResumeMetadata,
+    addToolCallToHistory,
+    getResumeMetadata,
     registerHiddenWebview,
     getHiddenWebviewIds,
     cleanupTask,

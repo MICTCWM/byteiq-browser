@@ -600,3 +600,155 @@
 .bg-notification-close:hover {
   color: var(--text-primary, #333);
 }
+
+/* 状态图标容器（包含图标和恢复按钮） */
+.bg-task-status-icon-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 恢复按钮（hover 时显示在勾上） */
+.bg-task-resume-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--brand-primary, #3464ff);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.15s ease;
+  box-shadow: 0 2px 8px rgba(52, 100, 255, 0.3);
+  z-index: 2;
+}
+
+.bg-task-status-icon-wrap:hover .bg-task-resume-btn {
+  opacity: 1;
+  visibility: visible;
+}
+
+.bg-task-resume-btn:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+  background: var(--brand-primary-dark, #2550e6);
+}
+
+.bg-task-resume-btn:active {
+  transform: translate(-50%, -50%) scale(0.95);
+}
+
+/* hover 时隐藏勾图标，显示恢复按钮 */
+.bg-task-status-icon-wrap:hover .bg-task-status-icon {
+  opacity: 0.3;
+}
+
+/* 恢复后的消息样式 */
+.chat-message.ai.bg-task-resumed {
+  background: linear-gradient(135deg, rgba(52, 100, 255, 0.03) 0%, transparent 100%);
+  border-left: 3px solid var(--brand-primary, #3464ff);
+}
+
+.bg-task-resumed .think-dropdown {
+  margin-bottom: 12px;
+}
+
+/* 恢复后的工具卡片容器 */
+.bg-task-tool-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* 恢复后的工具卡片样式 */
+.tool-card.bg-tool-card-resumed {
+  background: var(--bg-secondary, #f5f5f5);
+  border-radius: 8px;
+  padding: 8px 12px;
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+.tool-card.bg-tool-card-resumed:hover {
+  opacity: 1;
+}
+
+.tool-card.bg-tool-card-resumed .tool-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.tool-card.bg-tool-card-resumed .tool-card-icon {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-card.bg-tool-card-resumed .tool-card-title {
+  font-size: 12px;
+  font-weight: 500;
+  flex: 1;
+}
+
+.tool-card.bg-tool-card-resumed .tool-card-status {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-card.bg-tool-card-resumed .tool-card-desc {
+  font-size: 11px;
+  color: var(--text-secondary, #666);
+  margin-top: 4px;
+  padding-left: 24px;
+}
+
+/* 恢复后的总结样式 */
+.bg-task-summary {
+  background: var(--bg-primary, #fff);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 8px;
+}
+
+/* 深色模式覆盖 */
+.dark-mode .bg-task-resume-btn {
+  background: var(--brand-info, #5a8fff);
+  box-shadow: 0 2px 8px rgba(90, 143, 255, 0.3);
+}
+
+.dark-mode .bg-task-resume-btn:hover {
+  background: var(--brand-primary, #3464ff);
+}
+
+.dark-mode .chat-message.ai.bg-task-resumed {
+  background: linear-gradient(135deg, rgba(52, 100, 255, 0.08) 0%, transparent 100%);
+  border-left-color: var(--brand-info, #5a8fff);
+}
+
+.dark-mode .tool-card.bg-tool-card-resumed {
+  background: var(--bg-tertiary, #2a2a2a);
+}
+
+.dark-mode .bg-task-summary {
+  background: var(--bg-secondary, #1e1e1e);
+}

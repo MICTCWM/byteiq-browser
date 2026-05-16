@@ -60,6 +60,22 @@ function createBgTaskPanelUI(options) {
   }
 
   /**
+   * 恢复后台任务到前台对话
+   * @param {Object} task - 后台任务对象
+   */
+  function resumeTaskToFrontend(task) {
+    if (!task || task.status !== 'completed') return;
+
+    // 触发恢复回调（由外部注入）
+    if (typeof options.onResumeTask === 'function') {
+      options.onResumeTask(task);
+    }
+
+    // 关闭后台任务面板
+    hidePanel();
+  }
+
+  /**
    * 显示面板
    */
   function showPanel() {
@@ -118,7 +134,10 @@ function createBgTaskPanelUI(options) {
       itemEl.className = `bg-task-item bg-task-${task.status}`;
       itemEl.dataset.taskId = task.id;
 
-      // 状态图标（复用工具卡片的状态图标）
+      // 状态图标容器（包含图标和恢复按钮）
+      const statusIconWrap = documentRef.createElement('span');
+      statusIconWrap.className = 'bg-task-status-icon-wrap';
+
       const statusIcon = documentRef.createElement('span');
       statusIcon.className = 'bg-task-status-icon';
       if (task.status === 'running' || task.status === 'retrying') {
@@ -134,6 +153,23 @@ function createBgTaskPanelUI(options) {
           '<path fill="currentColor" d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12' +
           'A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>' +
           '</svg>';
+      }
+      statusIconWrap.appendChild(statusIcon);
+
+      // 已完成任务：添加恢复按钮（hover 时显示在勾上）
+      if (task.status === 'completed') {
+        const resumeBtn = documentRef.createElement('button');
+        resumeBtn.className = 'bg-task-resume-btn';
+        resumeBtn.title = t('ai.bgTaskResume') || '恢复到前台继续对话';
+        resumeBtn.innerHTML =
+          '<svg viewBox="0 0 24 24" width="14" height="14">' +
+          '<path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>' +
+          '</svg>';
+        resumeBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          resumeTaskToFrontend(task);
+        });
+        statusIconWrap.appendChild(resumeBtn);
       }
 
       // 任务名称
@@ -196,7 +232,7 @@ function createBgTaskPanelUI(options) {
         itemEl.appendChild(cancelBtn);
       }
 
-      itemEl.appendChild(statusIcon);
+      itemEl.appendChild(statusIconWrap);
       itemEl.appendChild(nameEl);
       itemEl.appendChild(toolBadgeEl);
       itemEl.appendChild(timeWrap);
@@ -432,7 +468,8 @@ function createBgTaskPanelUI(options) {
     togglePanel,
     renderTaskList,
     updateTaskToolBadge,
-    updateHeaderIcon
+    updateHeaderIcon,
+    resumeTaskToFrontend
   };
 }
 
