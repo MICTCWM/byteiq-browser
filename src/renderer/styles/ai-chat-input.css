@@ -259,6 +259,15 @@
     flex-shrink: 0;
 }
 
+.ai-toolbar-spacer {
+    flex: 1;
+}
+
+.ai-input-toolbar .ai-send-btn-group {
+    flex-direction: row;
+    gap: 4px;
+}
+
 .ai-input-row {
     display: flex;
     align-items: center;
