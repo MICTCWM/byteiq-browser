@@ -39,8 +39,9 @@ function createAiAgentRunner(options) {
     bindTabToSession,
     externalTodoManager,
     contextIsolation,
-    getBgTaskRunner, // 新增: 获取后台任务执行器
-    onBgTaskResultReady // 新增: 后台任务结果准备就绪回调
+    getBgTaskRunner,
+    onBgTaskResultReady,
+    getConsoleErrors
   } = options;
 
   let isAgentProcessing = false;
@@ -72,7 +73,8 @@ function createAiAgentRunner(options) {
     getCurrentPageInfo,
     getTaskState,
     t,
-    buildSystemPrompt
+    buildSystemPrompt,
+    getConsoleErrors
   });
 
   // 创建工具循环处理器实例

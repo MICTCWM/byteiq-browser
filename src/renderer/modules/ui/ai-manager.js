@@ -17,6 +17,7 @@ const {
 } = require('../ai/context/ai-context-utils');
 const { createAiAgentRunner } = require('../ai/agent/ai-agent-runner');
 const { createAiPageContext } = require('../ai/context/ai-page-context');
+const { createConsoleCollector } = require('../ai/context/ai-console-collector');
 const { createAiChatHandler } = require('../ai/chat/ai-chat-handler');
 const { createAiContextIsolation } = require('../ai/context/ai-context-isolation');
 const { createAiTodoManager } = require('../ai/todo/ai-todo-manager');
@@ -109,6 +110,9 @@ function createAiManager(options) {
     store,
     getActiveSessionId
   });
+
+  // 创建控制台日志收集器
+  const consoleCollector = createConsoleCollector();
 
   // 创建后台任务管理器
   const bgTaskManager = createBgTaskManager({
@@ -321,7 +325,8 @@ function createAiManager(options) {
     setActiveSessionId,
     readTabToSessionFromStore,
     renderSessionChat: (...args) => renderSessionChat(...args),
-    syncSessionMessagesToAgent: sessionId => syncSessionMessagesToAgent(sessionId)
+    syncSessionMessagesToAgent: sessionId => syncSessionMessagesToAgent(sessionId),
+    consoleCollector
   });
 
   function setInputEnabled(enabled) {
@@ -372,11 +377,11 @@ function createAiManager(options) {
     bindTabToSession: sessionService.bindTabToSession,
     externalTodoManager: todoManager,
     contextIsolation,
-    getBgTaskRunner: () => bgTaskRunner, // 传递后台任务执行器
+    getBgTaskRunner: () => bgTaskRunner,
     onBgTaskResultReady: handler => {
-      // 注册后台任务结果准备就绪回调
       bgTaskRunner.onTaskResultReady = handler;
-    }
+    },
+    getConsoleErrors: () => pageContext.getConsoleFormattedErrors()
   });
 
   const contextMenu = createContextMenu({ store, documentRef, agentRunner });

@@ -33,7 +33,7 @@ function createToolLoopHandler(deps) {
     getCurrentPageInfo,
     bindTabToSession,
     documentRef,
-    handleBgTaskResult,
+    _handleBgTaskResult,
     handleWaitSeconds,
     getBgTaskRunner
   } = deps;
@@ -184,11 +184,11 @@ function createToolLoopHandler(deps) {
         }
 
         // 添加工具结果到历史
-        const truncated = truncateToolResult(toolCall.name, toolResult);
+        const bgTruncated = truncateToolResult(toolCall.name, toolResult);
         agentMessageHistory.push({
           role: 'tool',
           tool_call_id: toolCall.id,
-          content: truncated.content
+          content: bgTruncated.content
         });
 
         if (contextIsolation?.isSessionActive?.(session.id)) {
@@ -287,6 +287,31 @@ function createToolLoopHandler(deps) {
       }
 
       const truncated = truncateToolResult(toolCall.name, toolResult);
+
+      // 如果有页面快照，追加到工具消息内容末尾
+      if (toolResult._pageSnapshot) {
+        const snap = toolResult._pageSnapshot;
+        const snapLines = ['\n\n[操作后页面状态]', 'URL: ' + snap.url, '标题: ' + snap.title];
+        if (snap.contentFilePath) {
+          snapLines.push('完整内容文件: ' + snap.contentFilePath);
+        }
+        snapLines.push(
+          '内容预览: ' + snap.contentPreview,
+          '可交互元素: ' +
+            snap.controlsCount.buttons +
+            '个按钮 | ' +
+            snap.controlsCount.inputs +
+            '个输入框 | ' +
+            snap.controlsCount.links +
+            '个链接'
+        );
+        const snapText = snapLines.join('\n');
+        truncated.content = (truncated.content || '') + snapText;
+        if (truncated.summary && typeof truncated.summary === 'string') {
+          truncated.summary = truncated.summary + snapText;
+        }
+      }
+
       const toolMsgIndex = agentMessageHistory.findIndex(
         msg => msg.role === 'tool' && msg.tool_call_id === toolCall.id
       );

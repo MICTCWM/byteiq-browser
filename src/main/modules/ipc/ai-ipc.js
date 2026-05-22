@@ -13,8 +13,26 @@ function registerAiIpc(options) {
     fetchAiModels
   } = options;
 
+  const fs = require('fs');
+  const path = require('path');
+  const { app } = require('electron');
+
   const activeChatRequests = new Map(); // taskId -> ClientRequest
   const activeAgentRequests = new Map(); // taskId -> ClientRequest
+
+  // AI 临时文件写入 IPC
+  ipcMain.handle('ai-write-temp-file', async (_event, { content, prefix = 'byteiq-page' }) => {
+    try {
+      const tempDir = app.getPath('temp');
+      const filename = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.txt`;
+      const filepath = path.join(tempDir, filename);
+      fs.writeFileSync(filepath, content, 'utf-8');
+      return { filepath };
+    } catch (error) {
+      console.error('[ai-ipc] Failed to write temp file:', error);
+      return { filepath: null, error: error.message };
+    }
+  });
 
   ipcMain.handle('ai-chat', async (event, { messages, taskId }) => {
     const resolvedTaskId = taskId || `chat-${Date.now()}-${Math.random().toString(16).slice(2)}`;

@@ -209,6 +209,39 @@ function createAiToolsExecutor(options) {
         args
       );
 
+      // 执行后置操作（如自动快照）- 异步非阻塞
+      if (def.postActions && Array.isArray(def.postActions)) {
+        for (const action of def.postActions) {
+          if (action === 'snapshot') {
+            (async () => {
+              try {
+                const tabId = args?.tab_id || '';
+                const wv = tabId ? getWebviewById(tabId) : getActiveWebview();
+                if (wv) {
+                  const pageInfo = await extractPageContent(wv);
+                  if (pageInfo) {
+                    toolResult._pageSnapshot = {
+                      url: pageInfo.url || '',
+                      title: pageInfo.title || '',
+                      contentPreview: (pageInfo.content || '').substring(0, 1500),
+                      contentLength: pageInfo.contentLength || 0,
+                      contentFilePath: pageInfo.contentFilePath || '',
+                      controlsCount: {
+                        buttons: pageInfo.controls?.buttons?.length || 0,
+                        inputs: pageInfo.controls?.inputs?.length || 0,
+                        links: pageInfo.controls?.links?.length || 0
+                      }
+                    };
+                  }
+                }
+              } catch (e) {
+                console.warn('[ai-tools-executor] post-action snapshot failed:', e);
+              }
+            })();
+          }
+        }
+      }
+
       return toolResult;
     } catch (error) {
       console.error('[ai-tools-executor] execute error:', error);

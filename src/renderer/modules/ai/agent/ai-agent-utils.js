@@ -12,6 +12,7 @@ const LARGE_RESULT_TOOLS = new Set(['get_page_info', 'search_page']);
 /**
  * 截断工具结果内容，防止内存膨胀和 IPC 传输过大
  * 对于 get_page_info/search_page 等大结果工具，只保留摘要信息
+ * 适配新的 Markdown 结构化输出和落盘机制
  * @param {string} toolName - 工具名
  * @param {*} toolResult - 工具执行结果
  * @returns {{ content: string, summary: string }} 截断后的内容和摘要
@@ -30,7 +31,7 @@ function truncateToolResult(toolName, toolResult) {
     };
   }
 
-  // 大结果工具：提取摘要字段，丢弃页面正文和控件列表
+  // 大结果工具：提取摘要字段，保留关键信息但丢弃完整页面正文
   const summary = {
     success: toolResult?.success,
     error: toolResult?.error || '',
@@ -48,13 +49,23 @@ function truncateToolResult(toolName, toolResult) {
     };
   }
 
+  // 如果有 content 长度信息，保留
+  if (toolResult?.contentLength) {
+    summary.contentLength = toolResult.contentLength;
+  }
+
+  // 如果内容已落盘，保留文件路径
+  if (toolResult?.contentFilePath) {
+    summary.contentFilePath = toolResult.contentFilePath;
+  }
+
   // 如果有 content，只保留前 500 字符
   if (toolResult?.content && typeof toolResult.content === 'string') {
     summary.contentPreview = toolResult.content.substring(0, 500);
     if (toolResult.content.length > 500) {
       summary.contentPreview += '...[truncated]';
     }
-    summary.contentLength = toolResult.content.length;
+    summary.contentLength = toolResult.contentLength || toolResult.content.length;
   }
 
   // 如果有 controls，只保留数量统计

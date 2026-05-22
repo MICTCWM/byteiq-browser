@@ -45,6 +45,7 @@ const webToolDefs = [
       },
       required: ['selector']
     },
+    postActions: ['snapshot'],
     async execute(context, args) {
       const tabId = args?.tab_id || '';
       const webview = tabId ? context.getWebviewById(tabId) : context.getActiveWebview();
@@ -57,28 +58,6 @@ const webToolDefs = [
       const result = await clickElement(webview, {
         selector: String(args?.selector || '')
       });
-
-      // 点击成功后提取页面信息反馈给AI
-      // 页面加载等待已在 ai-webview-bridge.js 中处理
-      if (result.success) {
-        try {
-          const pageInfo = await context.extractPageContent(webview);
-          if (pageInfo) {
-            return {
-              ...result,
-              tabId: tabId || '',
-              pageInfo: {
-                url: pageInfo.url || '',
-                title: pageInfo.title || '',
-                content: pageInfo.content ? pageInfo.content.substring(0, 2000) : ''
-              }
-            };
-          }
-        } catch (error) {
-          console.warn('[ai-tools-defs-web] Failed to extract page info after click:', error);
-          // 返回原始结果，不阻塞工具调用
-        }
-      }
 
       return {
         ...result,
@@ -98,6 +77,7 @@ const webToolDefs = [
       },
       required: ['selector', 'text']
     },
+    postActions: ['snapshot'],
     async execute(context, args) {
       const tabId = args?.tab_id || '';
       const webview = tabId ? context.getWebviewById(tabId) : context.getActiveWebview();
@@ -131,6 +111,7 @@ const webToolDefs = [
       },
       required: ['query']
     },
+    postActions: ['snapshot'],
     async execute(context, args) {
       const query = args?.query;
       if (!query) {

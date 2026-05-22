@@ -15,7 +15,7 @@ const {
  * @returns {object} 兼容旧接口的构建器实例
  */
 function createAgentPromptBuilder(options) {
-  const { todoManager, getPageList, getCurrentPageInfo, getTaskState, t, buildSystemPrompt } =
+  const { todoManager, getPageList, getCurrentPageInfo, getTaskState, t, getConsoleErrors } =
     options;
 
   // 创建新的统一构建器实例
@@ -24,7 +24,8 @@ function createAgentPromptBuilder(options) {
     getPageList,
     getCurrentPageInfo,
     getTaskState,
-    t
+    t,
+    getConsoleErrors
   });
 
   // 返回兼容旧接口的对象

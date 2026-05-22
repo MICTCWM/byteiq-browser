@@ -21,7 +21,13 @@ function buildBasePrompt(mode, t) {
   return `${base}\n\n${modeMap[mode] || modeMap.qa}`;
 }
 
-function buildPageContextSection({ pageContext, currentPageInfo, includePageContext = true, t }) {
+function buildPageContextSection({
+  pageContext,
+  currentPageInfo,
+  includePageContext = true,
+  t,
+  consoleErrors = ''
+}) {
   if (currentPageInfo) {
     let s = '\n\n[当前页面状态]';
     s += `\n标题: ${currentPageInfo.title || '未知'}`;
@@ -33,7 +39,12 @@ function buildPageContextSection({ pageContext, currentPageInfo, includePageCont
     let s = '\n\n' + (t('ai.pageContext') || '当前页面信息：');
     s += `\n标题: ${pageContext.title}\nURL: ${pageContext.url}`;
     if (pageContext.meta?.description) s += `\n描述: ${pageContext.meta.description}`;
+    if (pageContext.contentLength) s += `\n内容长度: ${pageContext.contentLength} 字符`;
+    if (pageContext.contentFilePath) s += `\n完整内容文件: ${pageContext.contentFilePath}`;
     s += `\n\n页面内容:\n${pageContext.content}`;
+    if (consoleErrors) {
+      s += '\n\n[控制台错误/警告]\n' + consoleErrors;
+    }
     return s;
   }
   return '';
@@ -204,7 +215,8 @@ function buildSelectionContext(options) {
 const TODO_SECTION_MARKER = '<!--TODO_SECTION-->';
 
 function createPromptBuilder(options) {
-  const { todoManager, getPageList, getCurrentPageInfo, getTaskState, t } = options;
+  const { todoManager, getPageList, getCurrentPageInfo, getTaskState, t, getConsoleErrors } =
+    options;
 
   function safeT(fn) {
     return typeof fn === 'function' ? fn : key => key;
@@ -213,11 +225,13 @@ function createPromptBuilder(options) {
   function buildAskSystemPrompt(session) {
     const tFn = safeT(t);
     let prompt = buildBasePrompt(session.mode || 'qa', tFn);
+    const consoleErrors = typeof getConsoleErrors === 'function' ? getConsoleErrors() : '';
     prompt += buildPageContextSection({
       pageContext: session.pageContext,
       currentPageInfo: typeof getCurrentPageInfo === 'function' ? getCurrentPageInfo() : null,
       includePageContext: true,
-      t: tFn
+      t: tFn,
+      consoleErrors
     });
     return prompt;
   }
@@ -228,12 +242,14 @@ function createPromptBuilder(options) {
       todoManager && typeof todoManager.buildTodoPrompt === 'function'
         ? todoManager.buildTodoPrompt()
         : '';
+    const consoleErrors = typeof getConsoleErrors === 'function' ? getConsoleErrors() : '';
     let prompt = buildBasePrompt('qa', tFn);
     prompt += buildPageContextSection({
       pageContext: session.pageContext,
       currentPageInfo: typeof getCurrentPageInfo === 'function' ? getCurrentPageInfo() : null,
       includePageContext: false,
-      t: tFn
+      t: tFn,
+      consoleErrors
     });
     const pageList = typeof getPageList === 'function' ? getPageList() : [];
     prompt += buildPagesSummarySection(pageList);
