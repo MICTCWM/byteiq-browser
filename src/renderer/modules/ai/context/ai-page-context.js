@@ -20,7 +20,8 @@ function createAiPageContext(deps) {
     updateSession,
     updateContextBar,
     renderSessionsList,
-    aiSidebar
+    aiSidebar,
+    consoleCollector
   } = deps;
 
   // 页面状态指示器元素
@@ -33,6 +34,9 @@ function createAiPageContext(deps) {
   // 内容提取防抖定时器
   let extractDebounceTimer = null;
   const EXTRACT_DEBOUNCE_MS = 800;
+
+  // 控制台日志收集的 webview 追踪
+  const trackedWebviewIds = new Set();
 
   /**
    * 获取当前页面实时信息（轻量级，不提取完整内容）
@@ -136,6 +140,20 @@ function createAiPageContext(deps) {
       return;
     }
 
+    // 管理控制台日志收集：为新 webview 启动收集，清理旧日志
+    if (consoleCollector && webview.getWebContentsId) {
+      try {
+        const wvId = webview.getWebContentsId();
+        if (!trackedWebviewIds.has(wvId)) {
+          trackedWebviewIds.add(wvId);
+          consoleCollector.clearOnNavigation(wvId);
+          consoleCollector.startCollecting(webview, wvId);
+        }
+      } catch {
+        // webview 可能尚未就绪
+      }
+    }
+
     // 等待页面加载完成
     try {
       if (webview.isLoading && webview.isLoading()) {
@@ -195,12 +213,62 @@ function createAiPageContext(deps) {
     }
   }
 
+  /**
+   * 获取当前活跃标签页的控制台错误/警告日志
+   */
+  function getConsoleFormattedErrors() {
+    if (!consoleCollector) return '';
+    const tabId = getActiveTabId();
+    const webview = tabId ? documentRef.getElementById(`webview-${tabId}`) : null;
+    if (!webview || webview.tagName !== 'WEBVIEW') return '';
+    try {
+      const wvId = webview.getWebContentsId();
+      return consoleCollector.getFormattedErrorsAndWarnings(wvId);
+    } catch {
+      return '';
+    }
+  }
+
+  /**
+   * 获取当前活跃标签页的控制台日志统计
+   */
+  function getConsoleLogsCount() {
+    if (!consoleCollector) return { total: 0, errors: 0, warnings: 0 };
+    const tabId = getActiveTabId();
+    const webview = tabId ? documentRef.getElementById(`webview-${tabId}`) : null;
+    if (!webview || webview.tagName !== 'WEBVIEW') return { total: 0, errors: 0, warnings: 0 };
+    try {
+      const wvId = webview.getWebContentsId();
+      return consoleCollector.getLogsCount(wvId);
+    } catch {
+      return { total: 0, errors: 0, warnings: 0 };
+    }
+  }
+
+  /**
+   * 导航时清空控制台日志
+   */
+  function clearConsoleOnNavigation(tabId) {
+    if (!consoleCollector || !tabId) return;
+    const webview = documentRef.getElementById(`webview-${tabId}`);
+    if (!webview || webview.tagName !== 'WEBVIEW') return;
+    try {
+      const wvId = webview.getWebContentsId();
+      consoleCollector.clearOnNavigation(wvId);
+    } catch {
+      // webview not ready
+    }
+  }
+
   return {
     getCurrentPageInfo,
     updatePageStatusUI,
     onPageChanged,
     onTabChanged,
     initPageStatus,
+    getConsoleFormattedErrors,
+    getConsoleLogsCount,
+    clearConsoleOnNavigation,
     get lastKnownPageInfo() {
       return lastKnownPageInfo;
     }
