@@ -42,8 +42,11 @@ function buildOpenAIResponseRequest(messages, model = 'gpt-4', stream = true) {
 
 /**
  * 构建 Anthropic 格式的对话请求体
+ * @param {Array} messages - 对话消息数组
+ * @param {string} model - 模型ID
+ * @param {object|null} thinking - 思考配置 { type: 'enabled'|'disabled', budget_tokens: number }
  */
-function buildAnthropicRequest(messages, model = 'claude-3-sonnet-20240229') {
+function buildAnthropicRequest(messages, model = 'claude-3-sonnet-20240229', thinking = null) {
   // Anthropic 需要 system 消息单独传递
   let systemPrompt = '';
   const filteredMessages = [];
@@ -64,6 +67,19 @@ function buildAnthropicRequest(messages, model = 'claude-3-sonnet-20240229') {
 
   if (systemPrompt) {
     requestBody.system = systemPrompt;
+  }
+
+  // 添加thinking参数（仅当启用时）
+  if (thinking && thinking.type === 'enabled' && thinking.budget_tokens) {
+    requestBody.thinking = {
+      type: 'enabled',
+      budget_tokens: thinking.budget_tokens
+    };
+    // 确保 max_tokens >= budget_tokens + 1024（满足API约束）
+    const minTokens = thinking.budget_tokens + 1024;
+    if (requestBody.max_tokens < minTokens) {
+      requestBody.max_tokens = minTokens;
+    }
   }
 
   return requestBody;

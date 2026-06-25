@@ -19,7 +19,12 @@ function createAiToolbar(options) {
   const uploadBtn = documentRef.getElementById('ai-upload-btn');
   const fileInput = documentRef.getElementById('ai-file-input');
 
-  const { getCandidateModelList } = require('../context/ai-model-context-config');
+  const {
+    getCandidateModelList,
+    getModelThinkingConfig,
+    setModelThinkingConfig,
+    THINKING_BUDGETS
+  } = require('../context/ai-model-context-config');
 
   function getStoredCandidateModels() {
     return getCandidateModelList(store);
@@ -193,6 +198,9 @@ function createAiToolbar(options) {
     const currentModel = getStoredCurrentModel();
 
     models.forEach(model => {
+      const itemWrapper = documentRef.createElement('div');
+      itemWrapper.className = 'ai-model-item-wrapper';
+
       const btn = documentRef.createElement('button');
       btn.className = 'ai-model-item';
       btn.textContent = model.id;
@@ -207,8 +215,90 @@ function createAiToolbar(options) {
         closeAllMenus();
       });
 
-      modelList.appendChild(btn);
+      itemWrapper.appendChild(btn);
+
+      // 添加思考等级展开按钮
+      const expandBtn = documentRef.createElement('button');
+      expandBtn.className = 'ai-model-thinking-expand';
+      expandBtn.innerHTML = '›';
+      expandBtn.title = '思考等级设置';
+      expandBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        showThinkingSubmenu(model.id, itemWrapper);
+      });
+
+      itemWrapper.appendChild(expandBtn);
+
+      modelList.appendChild(itemWrapper);
     });
+  }
+
+  /**
+   * 显示思考等级子菜单
+   */
+  function showThinkingSubmenu(modelId, parentElement) {
+    // 移除已有的子菜单
+    const existingSubmenu = documentRef.querySelector('.ai-thinking-submenu');
+    if (existingSubmenu) {
+      existingSubmenu.remove();
+    }
+
+    const thinkingConfig = getModelThinkingConfig(store, modelId);
+
+    const submenu = documentRef.createElement('div');
+    submenu.className = 'ai-thinking-submenu';
+
+    const budgetOptions = [
+      { value: 'disabled', label: 'Disabled', tokens: 0 },
+      { value: 'low', label: 'Low (1K)', tokens: THINKING_BUDGETS.low },
+      { value: 'medium', label: 'Medium (4K)', tokens: THINKING_BUDGETS.medium },
+      { value: 'high', label: 'High (8K)', tokens: THINKING_BUDGETS.high },
+      { value: 'extraHigh', label: 'XHigh (16K)', tokens: THINKING_BUDGETS.extraHigh }
+    ];
+
+    budgetOptions.forEach(opt => {
+      const optBtn = documentRef.createElement('button');
+      optBtn.className = 'ai-thinking-option';
+      optBtn.textContent = opt.label;
+
+      // 当前选中的等级
+      if (opt.value === 'disabled' && !thinkingConfig.enabled) {
+        optBtn.classList.add('active');
+      } else if (thinkingConfig.enabled && opt.value === thinkingConfig.budget) {
+        optBtn.classList.add('active');
+      }
+
+      optBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (opt.value === 'disabled') {
+          setModelThinkingConfig(store, modelId, { enabled: false });
+        } else {
+          setModelThinkingConfig(store, modelId, { enabled: true, budget: opt.value });
+        }
+        submenu.remove();
+        // 刷新模型列表显示
+        loadModelList();
+        if (showToast) {
+          const budgetLabel = opt.value === 'disabled' ? '已禁用' : opt.label;
+          showToast(`${modelId} 思考等级: ${budgetLabel}`, 'info');
+        }
+      });
+
+      submenu.appendChild(optBtn);
+    });
+
+    parentElement.appendChild(submenu);
+
+    // 点击其他区域关闭子菜单
+    setTimeout(() => {
+      const closeHandler = e => {
+        if (!submenu.contains(e.target)) {
+          submenu.remove();
+          documentRef.removeEventListener('click', closeHandler);
+        }
+      };
+      documentRef.addEventListener('click', closeHandler);
+    }, 0);
   }
 
   /**

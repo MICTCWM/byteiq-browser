@@ -17,6 +17,7 @@ const {
   upsertAiProfile,
   applyAiProfile,
   setModelContextSize,
+  setModelThinkingConfig,
   DEFAULT_CONTEXT_SIZE
 } = require('../../ai/context/ai-model-context-config');
 
@@ -126,7 +127,11 @@ function bindAiSettingsEvents(deps) {
             typeof item.contextSize === 'number' && item.contextSize >= 1024
               ? item.contextSize
               : defaultCtx;
-          return { id, contextSize };
+          const thinkingEnabled =
+            typeof item.thinkingEnabled === 'boolean' ? item.thinkingEnabled : false;
+          const thinkingBudget =
+            typeof item.thinkingBudget === 'string' ? item.thinkingBudget : 'medium';
+          return { id, contextSize, thinkingEnabled, thinkingBudget };
         })
         .filter(Boolean)
     };
@@ -301,6 +306,69 @@ function bindAiSettingsEvents(deps) {
       ctxRow.appendChild(ctxDisplay);
 
       tag.appendChild(ctxRow);
+
+      // 思考模式选项行
+      const thinkingRow = document.createElement('div');
+      thinkingRow.className = 'model-card-thinking-row';
+
+      const thinkingLabel = document.createElement('label');
+      thinkingLabel.className = 'model-card-thinking-label';
+
+      const thinkingToggle = document.createElement('input');
+      thinkingToggle.type = 'checkbox';
+      thinkingToggle.className = 'model-card-thinking-toggle';
+      thinkingToggle.checked = model.thinkingEnabled || false;
+      thinkingToggle.title = t('panels.settings.ai.thinkingMode') || '思考模式';
+      thinkingLabel.appendChild(thinkingToggle);
+
+      const thinkingLabelText = document.createElement('span');
+      thinkingLabelText.className = 'model-card-thinking-label-text';
+      thinkingLabelText.textContent = t('panels.settings.ai.thinkingMode') || '思考模式';
+      thinkingLabel.appendChild(thinkingLabelText);
+
+      thinkingRow.appendChild(thinkingLabel);
+
+      const thinkingBudgetSelect = document.createElement('select');
+      thinkingBudgetSelect.className = 'model-card-thinking-budget';
+      thinkingBudgetSelect.style.display = model.thinkingEnabled ? 'inline-block' : 'none';
+      thinkingBudgetSelect.title = t('panels.settings.ai.thinkingBudget') || '思考预算';
+
+      const budgetOptions = [
+        { value: 'low', label: t('panels.settings.ai.thinkingBudget.low') || 'Low (1K)' },
+        { value: 'medium', label: t('panels.settings.ai.thinkingBudget.medium') || 'Medium (4K)' },
+        { value: 'high', label: t('panels.settings.ai.thinkingBudget.high') || 'High (8K)' },
+        {
+          value: 'extraHigh',
+          label: t('panels.settings.ai.thinkingBudget.extraHigh') || 'XHigh (16K)'
+        }
+      ];
+
+      budgetOptions.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.label;
+        if (opt.value === (model.thinkingBudget || 'medium')) {
+          option.selected = true;
+        }
+        thinkingBudgetSelect.appendChild(option);
+      });
+
+      thinkingRow.appendChild(thinkingBudgetSelect);
+
+      // 思考模式切换事件
+      thinkingToggle.addEventListener('change', () => {
+        markDirty();
+        setModelThinkingConfig(store, model.id, { enabled: thinkingToggle.checked });
+        thinkingBudgetSelect.style.display = thinkingToggle.checked ? 'inline-block' : 'none';
+      });
+
+      // 思考预算变更事件
+      thinkingBudgetSelect.addEventListener('change', () => {
+        markDirty();
+        setModelThinkingConfig(store, model.id, { budget: thinkingBudgetSelect.value });
+      });
+
+      tag.appendChild(thinkingRow);
 
       aiModelCandidatesContainer.appendChild(tag);
     });

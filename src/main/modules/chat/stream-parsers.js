@@ -60,9 +60,18 @@ function parseStreamChunk(line, requestType) {
         return null;
 
       case 'anthropic':
-        // Anthropic 流式格式
-        if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
-          return { content: parsed.delta.text, reasoningContent: '' };
+        // Anthropic 流式格式：同时支持 thinking 和 text delta
+        if (parsed.type === 'content_block_delta') {
+          if (parsed.delta?.type === 'thinking_delta' && parsed.delta?.thinking) {
+            return { content: '', reasoningContent: parsed.delta.thinking };
+          }
+          if (parsed.delta?.text) {
+            return { content: parsed.delta.text, reasoningContent: '' };
+          }
+        }
+        // Anthropic content_block_start 可能包含 thinking 块
+        if (parsed.type === 'content_block_start' && parsed.content_block?.type === 'thinking') {
+          return { content: '', reasoningContent: parsed.content_block.thinking || '' };
         }
         return null;
 

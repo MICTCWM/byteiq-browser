@@ -2,6 +2,41 @@
  * AI 对话/Agent IPC 处理器
  */
 
+// 思考等级对应的budget_tokens
+const THINKING_BUDGETS = {
+  low: 1024,
+  medium: 4096,
+  high: 8192,
+  extraHigh: 16384
+};
+
+/**
+ * 获取模型的思考配置
+ */
+function getModelThinkingConfig(store, modelId) {
+  if (!store || !modelId) {
+    return null;
+  }
+
+  const candidates = store.get('settings.aiModelCandidates', []);
+  if (!Array.isArray(candidates)) {
+    return null;
+  }
+
+  const model = candidates.find(c => c && c.id === modelId);
+  if (!model || !model.thinkingEnabled) {
+    return null;
+  }
+
+  const budget = model.thinkingBudget || 'medium';
+  const budgetTokens = THINKING_BUDGETS[budget] || THINKING_BUDGETS.medium;
+
+  return {
+    type: 'enabled',
+    budget_tokens: budgetTokens
+  };
+}
+
 function registerAiIpc(options) {
   const {
     ipcMain,
@@ -44,6 +79,9 @@ function registerAiIpc(options) {
       const model = store.get('settings.aiModelId', 'gpt-3.5-turbo');
       const timeout = (store.get('settings.aiTimeout', 120) || 120) * 1000;
 
+      // 获取思考配置（仅anthropic类型）
+      const thinking = requestType === 'anthropic' ? getModelThinkingConfig(store, model) : null;
+
       if (!endpoint || !apiKey) {
         return {
           success: false,
@@ -58,7 +96,8 @@ function registerAiIpc(options) {
           apiKey,
           requestType,
           model,
-          timeout
+          timeout,
+          thinking
         },
         (chunk, accumulated, reasoningContent) => {
           if (event.sender.isDestroyed()) return;
@@ -134,6 +173,9 @@ function registerAiIpc(options) {
       const model = store.get('settings.aiModelId', 'gpt-3.5-turbo');
       const timeout = (store.get('settings.aiTimeout', 120) || 120) * 1000;
 
+      // 获取思考配置（仅anthropic类型）
+      const thinking = requestType === 'anthropic' ? getModelThinkingConfig(store, model) : null;
+
       if (!endpoint || !apiKey) {
         return {
           success: false,
@@ -195,7 +237,8 @@ function registerAiIpc(options) {
               requestType,
               model,
               timeout,
-              tools
+              tools,
+              thinking
             },
             registerAgentRequest
           );
@@ -230,7 +273,8 @@ function registerAiIpc(options) {
                 requestType,
                 model,
                 timeout,
-                tools: null
+                tools: null,
+                thinking
               },
               registerAgentRequest
             );

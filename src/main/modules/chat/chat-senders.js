@@ -46,7 +46,7 @@ function sendStreamingChatRequest(messages, config, onChunk, registerRequest) {
     let requestBody;
     switch (requestType) {
       case 'anthropic':
-        requestBody = buildAnthropicRequest(messages, model);
+        requestBody = buildAnthropicRequest(messages, model, config.thinking);
         requestBody.stream = true;
         break;
       case 'openai-response':
@@ -264,7 +264,7 @@ function sendChatRequest(messages, config, registerRequest) {
     let requestBody;
     switch (requestType) {
       case 'anthropic':
-        requestBody = buildAnthropicRequest(messages, model);
+        requestBody = buildAnthropicRequest(messages, model, config.thinking);
         break;
       case 'openai-chat':
       default:

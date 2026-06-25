@@ -9,6 +9,20 @@ const DEFAULT_CONTEXT_SIZE = 8192;
 
 const AI_PROFILES_SCHEMA_VERSION = 1;
 
+/**
+ * 思考等级配置
+ * budget_tokens 必须大于等于1024，且小于 max_tokens
+ */
+const THINKING_BUDGETS = {
+  disabled: 0,
+  low: 1024,
+  medium: 4096,
+  high: 8192,
+  extraHigh: 16384
+};
+
+const DEFAULT_THINKING_BUDGET = 'medium';
+
 function normalizeCandidateModels(list, fallbackContextSize) {
   const defaultCtx =
     typeof fallbackContextSize === 'number' && fallbackContextSize >= 1024
@@ -22,7 +36,12 @@ function normalizeCandidateModels(list, fallbackContextSize) {
       if (typeof item === 'string') {
         const id = item.trim();
         if (!id) return null;
-        return { id, contextSize: defaultCtx };
+        return {
+          id,
+          contextSize: defaultCtx,
+          thinkingEnabled: false,
+          thinkingBudget: DEFAULT_THINKING_BUDGET
+        };
       }
       if (typeof item === 'object') {
         const id = typeof item.id === 'string' ? item.id.trim() : '';
@@ -31,7 +50,21 @@ function normalizeCandidateModels(list, fallbackContextSize) {
           typeof item.contextSize === 'number' && item.contextSize >= 1024
             ? item.contextSize
             : defaultCtx;
-        return { id, contextSize };
+
+        // thinking 配置，向后兼容
+        const thinkingEnabled =
+          typeof item.thinkingEnabled === 'boolean' ? item.thinkingEnabled : false;
+        const thinkingBudget =
+          THINKING_BUDGETS[item.thinkingBudget] !== undefined
+            ? item.thinkingBudget
+            : DEFAULT_THINKING_BUDGET;
+
+        return {
+          id,
+          contextSize,
+          thinkingEnabled,
+          thinkingBudget
+        };
       }
       return null;
     })
@@ -308,9 +341,93 @@ function setModelContextSize(store, modelId, contextSize) {
   }
 }
 
+/**
+ * 获取模型的思考配置
+ * @param {object} store - electron-store 实例
+ * @param {string} modelId - 模型ID
+ * @returns {{ enabled: boolean, budget: string, budgetTokens: number }}
+ */
+function getModelThinkingConfig(store, modelId) {
+  if (!store || !modelId) {
+    return {
+      enabled: false,
+      budget: DEFAULT_THINKING_BUDGET,
+      budgetTokens: THINKING_BUDGETS[DEFAULT_THINKING_BUDGET]
+    };
+  }
+
+  const candidates = getCandidateModelList(store);
+  const model = candidates.find(c => c.id === modelId);
+
+  if (!model) {
+    return {
+      enabled: false,
+      budget: DEFAULT_THINKING_BUDGET,
+      budgetTokens: THINKING_BUDGETS[DEFAULT_THINKING_BUDGET]
+    };
+  }
+
+  const budget = model.thinkingBudget || DEFAULT_THINKING_BUDGET;
+  return {
+    enabled: model.thinkingEnabled || false,
+    budget,
+    budgetTokens: THINKING_BUDGETS[budget] || THINKING_BUDGETS[DEFAULT_THINKING_BUDGET]
+  };
+}
+
+/**
+ * 设置模型的思考配置
+ * @param {object} store - electron-store 实例
+ * @param {string} modelId - 模型ID
+ * @param {{ enabled?: boolean, budget?: string }} config - 思考配置
+ */
+function setModelThinkingConfig(store, modelId, config) {
+  if (!store || !modelId || !config) return;
+
+  const list = getCandidateModelList(store);
+  const item = list.find(c => c.id === modelId);
+  if (item) {
+    if (typeof config.enabled === 'boolean') {
+      item.thinkingEnabled = config.enabled;
+    }
+    if (typeof config.budget === 'string' && THINKING_BUDGETS[config.budget] !== undefined) {
+      item.thinkingBudget = config.budget;
+    }
+    store.set('settings.aiModelCandidates', list);
+  }
+}
+
+/**
+ * 构建Anthropic API的thinking参数
+ * @param {object} store - electron-store 实例
+ * @param {string} modelId - 模型ID
+ * @param {number} maxTokens - max_tokens参数值
+ * @returns {object|null} thinking参数对象，如果不启用则返回null
+ */
+function buildThinkingParam(store, modelId, maxTokens = 4096) {
+  const config = getModelThinkingConfig(store, modelId);
+
+  if (!config.enabled) {
+    return null;
+  }
+
+  // budget_tokens 必须小于 max_tokens
+  let budgetTokens = config.budgetTokens;
+  if (budgetTokens >= maxTokens) {
+    budgetTokens = Math.max(1024, Math.floor(maxTokens * 0.5));
+  }
+
+  return {
+    type: 'enabled',
+    budget_tokens: budgetTokens
+  };
+}
+
 module.exports = {
   DEFAULT_CONTEXT_SIZE,
   AI_PROFILES_SCHEMA_VERSION,
+  THINKING_BUDGETS,
+  DEFAULT_THINKING_BUDGET,
   normalizeCandidateModels,
   ensureAiProfiles,
   getAiProfiles,
@@ -321,5 +438,8 @@ module.exports = {
   migrateCandidateModels,
   getCandidateModelList,
   getModelContextSize,
-  setModelContextSize
+  setModelContextSize,
+  getModelThinkingConfig,
+  setModelThinkingConfig,
+  buildThinkingParam
 };
