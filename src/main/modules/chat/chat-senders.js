@@ -76,22 +76,18 @@ function sendStreamingChatRequest(messages, config, onChunk, registerRequest) {
     let pendingChunks = [];
     let throttleTimer = null;
     const THROTTLE_INTERVAL = 50; // ms
+    // 维护真正的累积内容，用于 flush 时发送
+    let accumulatedContent = '';
+    let accumulatedReasoningContent = '';
 
     function flushPendingChunks() {
       if (pendingChunks.length > 0 && onChunk) {
-        // 合并所有待发送的数据块
-        let combinedContent = '';
-        let lastFullContent = '';
-        let lastReasoningContent = '';
-
-        for (const { content, fullContent, reasoningContent } of pendingChunks) {
-          combinedContent += content;
-          lastFullContent = fullContent;
-          lastReasoningContent = reasoningContent;
-        }
-
-        // 一次性发送合并后的数据
-        onChunk(combinedContent, lastFullContent, lastReasoningContent);
+        // 合并所有待发送的数据块 — 累积内容已实时维护，这里直接用累积值
+        onChunk(
+          pendingChunks.map(c => c.content).join(''),
+          accumulatedContent,
+          accumulatedReasoningContent
+        );
         pendingChunks = [];
       }
       throttleTimer = null;
@@ -126,9 +122,11 @@ function sendStreamingChatRequest(messages, config, onChunk, registerRequest) {
           if (parsed !== null) {
             if (parsed.content) {
               fullContent += parsed.content;
+              accumulatedContent = fullContent;
             }
             if (parsed.reasoningContent) {
               fullReasoningContent += parsed.reasoningContent;
+              accumulatedReasoningContent = fullReasoningContent;
             }
 
             // 优化：收集数据块，定期批量发送 IPC 消息

@@ -383,6 +383,7 @@ function createAiAgentRunner(options) {
 
     let maxIterations = 30;
     let textOnlyCount = 0;
+    let tokenRetryNeeded = false; // token 超限时设为 true 以触发外部重试
     // 使用Set存储处理后的消息内容，用于快速检测重复
     const previousMessages = new Set();
     const completionKeywords = [
@@ -401,6 +402,11 @@ function createAiAgentRunner(options) {
     try {
       while (isAgentProcessing && maxIterations > 0) {
         maxIterations--;
+
+        // token 超限重试：已经截断历史，直接继续循环
+        if (tokenRetryNeeded) {
+          tokenRetryNeeded = false;
+        }
 
         // 会话隔离守卫检查：如果会话已变更，立即退出循环
         if (currentOperationGuard && !currentOperationGuard.guard()) {
@@ -517,6 +523,7 @@ function createAiAgentRunner(options) {
 
       // token 超限错误：自动截断历史重试一次
       if (
+        !tokenRetryNeeded &&
         (errMsg.includes('context_length') ||
           errMsg.includes('max_tokens') ||
           errMsg.includes('token limit') ||
@@ -533,6 +540,7 @@ function createAiAgentRunner(options) {
         if (aiMsgElement && aiMsgElement.parentNode) {
           aiMsgElement.parentNode.removeChild(aiMsgElement);
         }
+        // 设置标志以便重新进入循环时跳过 aiMsgElement 创建（已移除无意义赋值）
       } else {
         if (aiMsgElement) {
           aiMsgElement.innerText = `${t('ai.error') || '发生错误'}: ${errMsg}`;

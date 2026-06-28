@@ -237,7 +237,7 @@
       modalManager.show({
         type: 'info',
         title: '\u6269\u5c55\u8be6\u60c5',
-        message: lines.join('\\n')
+        message: lines.join('\n')
       });
     });
 

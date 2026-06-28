@@ -49,7 +49,7 @@ function createBrowserManager(options) {
         updateZoomUI(factor);
       });
     } catch {
-      // webview 尚未 dom-ready，getZoomFactor 不可用
+      console.warn('[browser-manager] webview not ready for syncZoomUI');
     }
   }
 
@@ -60,7 +60,7 @@ function createBrowserManager(options) {
     try {
       currentUrl = webview.getURL();
     } catch {
-      // webview 尚未 dom-ready，getURL 不可用
+      console.warn('[browser-manager] webview not ready for getURL');
     }
     const storedZoom = getZoomForUrl(currentUrl);
     if (storedZoom) {
@@ -158,7 +158,7 @@ function createBrowserManager(options) {
       try {
         url = webview.getURL();
       } catch {
-        // webview 尚未 dom-ready，getURL 不可用
+        console.warn('[browser-manager] webview not ready for getURL (onActiveWebviewChanged)');
       }
       urlInput.value = url;
       updateBookmarkIcon(url);

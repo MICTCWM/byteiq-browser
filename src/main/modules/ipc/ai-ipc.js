@@ -351,6 +351,7 @@ function registerAiIpc(options) {
         };
       }
       console.error('AI agent error:', error);
+      activeAgentRequests.delete(resolvedTaskId);
       return {
         success: false,
         error: error.message || 'Agent请求失败',

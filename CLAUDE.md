@@ -1,3 +1,8 @@
+---
+description: 
+alwaysApply: true
+---
+
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 

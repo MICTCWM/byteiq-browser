@@ -83,7 +83,7 @@ function createTabWebviewEvents(options) {
       try {
         stopUrl = webview.getURL();
       } catch {
-        // webview 尚未 dom-ready
+        console.warn('[tab-webview-events] webview not ready for getURL (did-stop-loading)');
       }
       if (id === getActiveTabId()) {
         urlInput.value = stopUrl;
@@ -140,7 +140,7 @@ function createTabWebviewEvents(options) {
       try {
         historyUrl = webview.getURL();
       } catch {
-        // webview 尚未 dom-ready
+        console.warn('[tab-webview-events] webview not ready for getURL (page-title-updated)');
       }
       saveHistory(historyUrl, e.title);
     });
@@ -173,7 +173,7 @@ function createTabWebviewEvents(options) {
     webview.addEventListener('did-fail-load', e => {
       if (e.errorCode === -3) return;
 
-      console.error('Failed to load:', e);
+      console.error('[tab-webview-events] Failed to load:', e.validatedURL || 'unknown', e);
 
       if (e.validatedURL && e.validatedURL.startsWith('chrome-extension://')) {
         ipcRenderer.send('extensions-log', {

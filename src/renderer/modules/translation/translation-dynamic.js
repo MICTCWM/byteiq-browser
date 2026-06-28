@@ -83,10 +83,15 @@ function createDynamicTranslationController(options) {
           const nodeInfo = nodeData[i];
 
           if (translation && nodeInfo) {
-            const script = applyTranslationScript.replace(
-              '__TRANSLATIONS__',
-              JSON.stringify([translation])
-            ).replace('__NODE_DATA__', JSON.stringify([nodeInfo]));
+            // 安全验证：nodeInfo 只允许期望的字段，防止任意 JS 注入
+            const safeNodeInfo = {
+              selector: typeof nodeInfo.selector === 'string' ? nodeInfo.selector : '',
+              text: typeof nodeInfo.text === 'string' ? nodeInfo.text : '',
+              tag: typeof nodeInfo.tag === 'string' ? nodeInfo.tag : ''
+            };
+            const script = applyTranslationScript
+              .replace('__TRANSLATIONS__', JSON.stringify([translation]))
+              .replace('__NODE_DATA__', JSON.stringify([safeNodeInfo]));
 
             try {
               await webview.executeJavaScript(script);

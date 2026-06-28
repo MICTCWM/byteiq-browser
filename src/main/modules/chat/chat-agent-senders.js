@@ -62,6 +62,24 @@ function sendResponsesStreamForAgent(messages, config, onTextChunk, registerRequ
       toolCallsByItemId: new Map()
     };
 
+    // 性能优化：IPC 节流缓冲（每 50ms 发送一次）
+    let lastFlushText = '';
+    let throttleTimer = null;
+    const THROTTLE_INTERVAL = 50; // ms
+
+    function flushPendingText() {
+      if (onTextChunk && state.text !== lastFlushText) {
+        onTextChunk(state.text, '');
+        lastFlushText = state.text;
+      }
+      throttleTimer = null;
+    }
+
+    function scheduleTextFlush() {
+      if (throttleTimer) return;
+      throttleTimer = setTimeout(flushPendingText, THROTTLE_INTERVAL);
+    }
+
     const req = httpModule.request(options, res => {
       res.setEncoding('utf8');
       let buffer = '';
@@ -88,8 +106,10 @@ function sendResponsesStreamForAgent(messages, config, onTextChunk, registerRequ
               : trimmed.slice(5).trim();
             const payload = JSON.parse(jsonStr);
             parseResponsesStreamEvent(payload, state);
-            if (onTextChunk && state.text) {
-              onTextChunk(state.text, '');
+
+            // 节流发送：仅当文本变化时调度发送
+            if (state.text !== lastFlushText) {
+              scheduleTextFlush();
             }
           } catch {
             continue;
@@ -98,6 +118,13 @@ function sendResponsesStreamForAgent(messages, config, onTextChunk, registerRequ
       });
 
       res.on('end', () => {
+        // 清理定时器并发送剩余的数据
+        if (throttleTimer) {
+          clearTimeout(throttleTimer);
+          throttleTimer = null;
+        }
+        flushPendingText(); // 确保发送最后的数据
+
         if (res.statusCode >= 200 && res.statusCode < 300) {
           if (buffer) {
             const trimmed = buffer.trim();
@@ -108,7 +135,8 @@ function sendResponsesStreamForAgent(messages, config, onTextChunk, registerRequ
                   : trimmed.slice(5).trim();
                 const payload = JSON.parse(jsonStr);
                 parseResponsesStreamEvent(payload, state);
-                if (onTextChunk && state.text) {
+                // 最后一块数据，直接发送
+                if (onTextChunk && state.text !== lastFlushText) {
                   onTextChunk(state.text, '');
                 }
               } catch {
