@@ -2,8 +2,8 @@
 .chat-message.tool-card-style-badge {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 0;
+    gap: 4px;
+    padding: 4px 0;
     background: none;
     border: none;
     box-shadow: none;

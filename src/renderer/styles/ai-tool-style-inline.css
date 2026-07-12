@@ -2,8 +2,8 @@
 .chat-message.tool-card-style-inline {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 7px 14px;
+    gap: 6px;
+    padding: 5px 12px;
     background: var(--ai-surface-soft, #f1f3f4);
     border-radius: 20px;
     border: 1px solid var(--ai-border);
