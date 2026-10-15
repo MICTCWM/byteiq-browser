@@ -94,6 +94,7 @@ byteiq-browser/
 ├── docs/               # 重构汇报文档（被git忽略）
 ├── .github/            # GitHub 配置
 ├── CONTRIBUTING.md     # 贡献指南
+├── DEVELOPMENT.md      # 开发与长期维护规范
 ├── 开源教程.md          # 开源入门教程
 ├── CODE_OF_CONDUCT.md  # 行为准则
 ├── README.md           # 项目说明（本文件）
@@ -105,6 +106,7 @@ byteiq-browser/
 
 - **[开源教程.md](开源教程.md)** - 开源入门完整教程，适合新手上路
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - 贡献指南，了解如何参与项目
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - 开发规范、项目架构、安全边界与维护流程
 - **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** - 社区行为准则
 
 ## 🤝 贡献
