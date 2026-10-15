@@ -1,101 +1,135 @@
-<!-- gitnexus:start -->
-# GitNexus — Code Intelligence
+# Memory
 
-This project is indexed by GitNexus as **byteiq-browser** (1095 symbols, 3213 relationships, 85 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+## Project Overview
+Byteiq Browser is a community-driven AI browser built on Electron 28 + Chromium. See @README.md for details and @package.json for commands.
 
-> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
+## Tech Stack
+- Electron 28 (main + renderer process)
+- Vanilla JavaScript (no frontend framework)
+- electron-store for persistent settings
+- IndexedDB for AI chat history
+- Jest for testing
+- ESLint + Prettier for code quality
 
-## Always Do
+## Code Style Guidelines
+- JavaScript, 2-space indent, single quotes, semicolons, max 100 columns (see `.prettierrc`)
+- Use `const` by default; `let` only when reassignment is needed; never use `var`
+- No `console.log` — use `console.warn` or `console.error` only
+- No `eval`, `new Function`, or string-based code execution (security rule)
+- Use descriptive variable names; extract complex conditions into named booleans
+- Prefer factory functions (`createXxxManager()`) over classes
+- Pass dependencies via parameter injection (see `createDownloadsManager({ ipcMain, shell, getMainWindow })`)
 
-- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
-- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
-- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
-- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
-- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
+## Architecture Notes
 
-## When Debugging
+### Process Model
+- **Main process** (`src/main/`): system APIs, windows, persistence, AI network requests, IPC handlers
+- **Renderer process** (`src/renderer/`): all UI, tabs, navigation, browser views
+- Current main window has `nodeIntegration: true, contextIsolation: false` (legacy debt — new windows MUST use contextIsolation)
 
-1. `gitnexus_query({query: "<error or symptom>"})` — find execution flows related to the issue
-2. `gitnexus_context({name: "<suspect function>"})` — see all callers, callees, and process participation
-3. `READ gitnexus://repo/byteiq-browser/process/{processName}` — trace the full execution flow step by step
-4. For regressions: `gitnexus_detect_changes({scope: "compare", base_ref: "main"})` — see what your branch changed
+### Module Pattern
+Both processes use factory functions that accept injected dependencies:
+```js
+// Renderer pattern
+const manager = createXxxManager({ /* deps */ });
+manager.init();
 
-## When Refactoring
-
-- **Renaming**: MUST use `gitnexus_rename({symbol_name: "old", new_name: "new", dry_run: true})` first. Review the preview — graph edits are safe, text_search edits need manual review. Then run with `dry_run: false`.
-- **Extracting/Splitting**: MUST run `gitnexus_context({name: "target"})` to see all incoming/outgoing refs, then `gitnexus_impact({target: "target", direction: "upstream"})` to find all external callers before moving code.
-- After any refactor: run `gitnexus_detect_changes({scope: "all"})` to verify only expected files changed.
-
-## Never Do
-
-- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
-- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
-- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
-- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
-
-## Tools Quick Reference
-
-| Tool | When to use | Command |
-|------|-------------|---------|
-| `query` | Find code by concept | `gitnexus_query({query: "auth validation"})` |
-| `context` | 360-degree view of one symbol | `gitnexus_context({name: "validateUser"})` |
-| `impact` | Blast radius before editing | `gitnexus_impact({target: "X", direction: "upstream"})` |
-| `detect_changes` | Pre-commit scope check | `gitnexus_detect_changes({scope: "staged"})` |
-| `rename` | Safe multi-file rename | `gitnexus_rename({symbol_name: "old", new_name: "new", dry_run: true})` |
-| `cypher` | Custom graph queries | `gitnexus_cypher({query: "MATCH ..."})` |
-
-## Impact Risk Levels
-
-| Depth | Meaning | Action |
-|-------|---------|--------|
-| d=1 | WILL BREAK — direct callers/importers | MUST update these |
-| d=2 | LIKELY AFFECTED — indirect deps | Should test |
-| d=3 | MAY NEED TESTING — transitive | Test if critical path |
-
-## Resources
-
-| Resource | Use for |
-|----------|---------|
-| `gitnexus://repo/byteiq-browser/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/byteiq-browser/clusters` | All functional areas |
-| `gitnexus://repo/byteiq-browser/processes` | All execution flows |
-| `gitnexus://repo/byteiq-browser/process/{name}` | Step-by-step execution trace |
-
-## Self-Check Before Finishing
-
-Before completing any code modification task, verify:
-1. `gitnexus_impact` was run for all modified symbols
-2. No HIGH/CRITICAL risk warnings were ignored
-3. `gitnexus_detect_changes()` confirms changes match expected scope
-4. All d=1 (WILL BREAK) dependents were updated
-
-## Keeping the Index Fresh
-
-After committing code changes, the GitNexus index becomes stale. Re-run analyze to update it:
-
-```bash
-npx gitnexus analyze
+// Main pattern  
+const manager = createXxxManager({ /* deps */ });
+manager.registerIpc();
 ```
 
-If the index previously included embeddings, preserve them by adding `--embeddings`:
+### IPC Architecture
+- IPC handlers live in `src/main/modules/ipc/` as separate files per feature (ai-ipc.js, downloads-ipc.js, etc.)
+- Register IPC in main.js by calling `registerXxxIpc()` or `createXxxManager().registerIpc()`
+- All IPC parameters must be validated in the main process
+- For streaming/cancellable operations, maintain task IDs and clean up listeners on cancel/destroy
 
-```bash
-npx gitnexus analyze --embeddings
+### Directory Structure
+```
+src/main/
+  main.js                  # Entry: window creation, IPC registration
+  modules/
+    ipc/                   # IPC handlers (ai, downloads, password, translation, dialog, version)
+    chat/                  # AI chat backend
+    password/              # Password management backend
+    translation/           # AI translation backend
+    ai-chat.js             # AI API calls (streaming + non-streaming)
+    ai-models.js           # Model list fetching
+    extensions-manager.js  # Chrome extension loading
+  preloads/
+
+src/renderer/
+  renderer.js              # Entry: initializes all managers
+  i18n.js                  # Internationalization
+  modules/
+    app/                   # DOM references, event binding
+    tabs/                  # Tab management
+    navigation/            # Browser view navigation
+    ui/                    # Context menu, find, overlays, modals, settings panels
+    ai/                    # AI chat UI
+    downloads/             # Downloads UI
+    extensions/            # Extensions UI
+    password/              # Password UI
+    translation/           # Translation UI
+    storage/               # IndexedDB (ai-history with schema versioning)
+  locales/                 # 6 languages: en-US, ja-JP, ko-KR, ru-RU, zh-CN, zh-TW
+  fragments/               # HTML layout fragments
+  styles/                  # Per-feature CSS files
+  styles.css               # Style entry point
 ```
 
-To check whether embeddings exist, inspect `.gitnexus/meta.json` — the `stats.embeddings` field shows the count (0 means no embeddings). **Running analyze without `--embeddings` will delete any previously generated embeddings.**
+### Security Boundaries
+- Never expose main process objects, credentials, or unnecessary IPC to web pages
+- Untrusted content (web pages, extension pages) must be treated as hostile
+- All user-visible strings go through i18n (`t()` function); never hardcode in UI code
 
-> Claude Code users: A PostToolUse hook handles this automatically after `git commit` and `git merge`.
+## i18n Requirements
+- Adding a new translation key requires updating ALL 6 locale files in `src/renderer/locales/`
+- Keep interpolation parameter names consistent across languages
+- Access translations via `t('key')` from `src/renderer/i18n.js`
 
-## CLI
+## Data & Persistence
+- Settings: `electron-store` (keys under `settings.*`)
+- AI history: IndexedDB via `src/renderer/modules/storage/ai-history/schema.js` — bump DB version on schema changes
+- When changing stored data format, search all readers and provide migration or backward compatibility
 
-| Task | Read this skill file |
-|------|---------------------|
-| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
-| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
-| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
-| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
-| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
-| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+## Testing
+- Tests in `tests/**/*.test.js` (Jest)
+- Test behavior and edge cases, not implementation details
+- New IPC handlers need tests covering normal + error paths
 
-<!-- gitnexus:end -->
+## Common Workflows
+
+| Task | Command |
+|------|---------|
+| Start dev | `npm run dev` |
+| Run tests | `npm test` |
+| Lint check | `npm run lint` |
+| Lint fix | `npm run lint:fix` |
+| Format code | `npm run format` |
+| Format check | `npm run format:check` |
+| Build installer | `npm run build` |
+
+### Pre-commit Checklist
+1. `npm test` passes
+2. `npm run lint` has no errors
+3. `npm run format:check` passes
+4. New UI strings added to all 6 locale files
+5. IPC changes validated on both main + renderer sides
+
+### Adding a New Feature
+1. Determine which process it belongs to (main for system/network, renderer for UI)
+2. Create module in the appropriate `modules/` subdirectory
+3. Use factory function pattern with dependency injection
+4. For IPC: create handler file in `src/main/modules/ipc/`, register in `main.js`
+5. For UI: add module in `src/renderer/modules/`, wire in `renderer.js`
+6. Add i18n keys to all locale files
+7. Add tests if applicable
+
+## Common Pitfalls
+- Forgetting to update all locale files when adding a translation key
+- Not cleaning up IPC listeners when windows are destroyed
+- Using `console.log` instead of `console.warn`/`console.error`
+- Placing business logic in `main.js` or `renderer.js` instead of dedicated modules
+- Not validating IPC parameters in the main process
